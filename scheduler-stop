@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+
+scheduler-kubernetes-scheduler-stop() {
+  declare desc="scheduler-kubernetes scheduler-stop plugin trigger"
+  declare trigger="scheduler-kubernetes scheduler-stop"
+  declare DOKKU_SCHEDULER="$1" APP="$2" REMOVE_CONTAINERS="$3"
+  shift 2
+
+  if [[ "$DOKKU_SCHEDULER" != "docker-local" ]]; then
+    return
+  fi
+
+  local DOKKU_SCALE_FILE="$DOKKU_ROOT/$APP/DOKKU_SCALE"
+  if [[ ! -f "$DOKKU_SCALE_FILE" ]]; then
+    return
+  fi
+
+  dokku_log_warn "Not implemented for kubernetes"
+}
+
+scheduler-kubernetes-scheduler-stop "$@"

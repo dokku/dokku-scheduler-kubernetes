@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+
+cmd-scheduler-kubernetes-report-single "$@"

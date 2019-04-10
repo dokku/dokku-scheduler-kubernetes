@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+
+scheduler-kubernetes-install() {
+  declare desc="scheduler-kubernetes install plugin trigger"
+  declare trigger="scheduler-kubernetes-install"
+
+  mkdir -p "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes"
+  chown -R "${DOKKU_SYSTEM_USER}:${DOKKU_SYSTEM_GROUP}" "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes"
+
+  fn-plugin-property-setup "scheduler-kubernetes"
+
+  local KUBEDOG_VENDOR_URL="{KUBEDOG_VENDOR_URL:-"https://dl.bintray.com"}"
+  local KUBEDOG_VERSION="v0.1.0"
+  curl -L "${KUBEDOG_VENDOR_URL}/flant/kubedog/${KUBEDOG_VERSION}/kubedog-linux-amd64-${KUBEDOG_VERSION}" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
+  chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
+}
+
+scheduler-kubernetes-install "$@"

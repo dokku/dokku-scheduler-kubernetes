@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/config/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+
+
+scheduler-kubernetes-scheduler-deploy() {
+  declare desc="deploys an image tag for a given application"
+  declare trigger="scheduler-kubernetes scheduler-deploy"
+  declare DOKKU_SCHEDULER="$1" APP="$2" IMAGE_TAG="$3"
+
+  if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
+    return
+  fi
+
+  local line PROC_TYPE PROC_COUNT CONTAINER_INDEX
+  local DOKKU_SCALE_FILE="$DOKKU_ROOT/$APP/DOKKU_SCALE"
+  local DEPLOYMENT_ID="$(date +%s)"
+  local TMP_JOB_FILE
+  TMP_JOB_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_JOB_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  dokku_log_info2 "Deploying via kubernetes"
+  IMAGE=$(get_deploying_app_image_name "$APP" "$IMAGE_TAG")
+  plugn trigger pre-deploy "$APP" "$IMAGE_TAG"
+
+  while read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^#.* ]] && continue
+    line="$(strip_inline_comments "$line")"
+    PROC_TYPE=${line%%=*}
+    PROC_COUNT=${line#*=}
+
+    dokku_log_info1 "Deploying ${PROC_TYPE} to ${PROC_COUNT}"
+    RESOURCE_REQUESTS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "reserve" "cpu" || echo "100m")
+    RESOURCE_REQUESTS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" || echo "256Mi")
+    RESOURCE_LIMITS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "cpu" || echo "100m")
+    RESOURCE_LIMITS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" || echo "256Mi")
+
+    local template="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/web.hcl.sigil"
+    [[ "$PROC_TYPE" != web ]] && template="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/background.hcl.sigil"
+
+    # TODO: figure out a way to shim in environment variables
+    SIGIL_PARAMS=(-f "$template" APP="$APP"
+        RESOURCE_REQUESTS_CPU="$RESOURCE_REQUESTS_CPU" RESOURCE_REQUESTS_MEMORY="$RESOURCE_REQUESTS_MEMORY"
+        RESOURCE_LIMITS_CPU="$RESOURCE_LIMITS_CPU" RESOURCE_LIMITS_MEMORY="$RESOURCE_LIMITS_MEMORY"
+        IMAGE="$IMAGE"
+        ENVIRONMENT_VARIABLES=""
+        REPLICAS="$PROC_COUNT" PROCESS_TYPE="$PROC_TYPE" PORT="5000")
+
+    sigil "${SIGIL_PARAMS[@]}" | cat -s > $TMP_JOB_FILE
+
+    kubectl apply -f "$TMP_JOB_FILE" | sed "s/^/       /"
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" rollout track deployment "${APP}-${PROCESS_TYPE}" | sed "s/^/       /"
+  done < "$DOKKU_SCALE_FILE"
+
+  dokku_log_info2 "Deploy complete"
+
+  dokku_log_info1 "Running post-deploy"
+  plugn trigger core-post-deploy "$APP" "" "" "$IMAGE_TAG"
+  plugn trigger post-deploy "$APP" "" "" "$IMAGE_TAG"
+}
+
+scheduler-kubernetes-scheduler-deploy "$@"
