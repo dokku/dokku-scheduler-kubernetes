@@ -6,7 +6,19 @@ scheduler-kubernetes-install-dependencies() {
   declare desc="scheduler-kubernetes install-dependencies plugin trigger"
   declare trigger="scheduler-kubernetes-install-dependencies"
 
-  apt-get install -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" --force-yes -qq -y jq
+  case "$DOKKU_DISTRO" in
+    debian | ubuntu)
+      apt-get install -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" --force-yes -qq -y jq
+      ;;
+
+    opensuse)
+      zypper -q in -y jq
+      ;;
+
+    arch)
+      pacman -S --noconfirm --noprogressbar --needed jq
+      ;;
+  esac
 }
 
 scheduler-kubernetes-install-dependencies "$@"
