@@ -6,9 +6,26 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 
 fn-strip-ports() {
   declare DEPLOYMENT_FILE="$1"
-  TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
 
   jq -M 'del(.spec.template.spec.containers[0].ports)' < "$DEPLOYMENT_FILE" > "$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+}
+
+fn-set-env-vars() {
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  local TMP_FILE_TWO=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+  trap 'rm -rf "$TMP_FILE_TWO" > /dev/null' RETURN INT TERM EXIT
+  local key JSON_KEY JSON_VALUE
+
+  cat "$DEPLOYMENT_FILE" > "$TMP_FILE"
+  # TODO: Implement `dokku config:json` and use that to populate containers.env
+  while read -r key; do
+    JSON_KEY="$key" JSON_VALUE="$(dokku config:get "$APP" "$key")" jq -M ".spec.template.spec.containers[0].env += [{\"name\": env.JSON_KEY, \"value\": env.JSON_VALUE}]" < "$TMP_FILE" > "$TMP_FILE_TWO"
+    mv "$TMP_FILE_TWO" "$TMP_FILE"
+  done < <(dokku config:keys "$APP")
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 }
 
@@ -45,7 +62,6 @@ scheduler-kubernetes-scheduler-deploy() {
     RESOURCE_LIMITS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "cpu" || echo "100m")
     RESOURCE_LIMITS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" || echo "256Mi")
 
-    # TODO: figure out a way to shim in environment variables
     SIGIL_PARAMS=(APP="$APP"
         RESOURCE_REQUESTS_CPU="$RESOURCE_REQUESTS_CPU" RESOURCE_REQUESTS_MEMORY="$RESOURCE_REQUESTS_MEMORY"
         RESOURCE_LIMITS_CPU="$RESOURCE_LIMITS_CPU" RESOURCE_LIMITS_MEMORY="$RESOURCE_LIMITS_MEMORY"
@@ -54,6 +70,7 @@ scheduler-kubernetes-scheduler-deploy() {
 
     sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s > $TMP_FILE
     [[ "$PROC_TYPE" != "web" ]] && fn-strip-ports "$TMP_FILE"
+    fn-set-env-vars "$TMP_FILE"
 
     kubectl apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" rollout track deployment "${APP}-${PROCESS_TYPE}" | sed "s/^/       /"
