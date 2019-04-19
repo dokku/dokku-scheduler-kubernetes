@@ -1,0 +1,22 @@
+{
+  "apiVersion": "v1",
+  "kind": "Service",
+  "metadata": {
+    "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
+    "labels": {
+      "app": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+    }
+  },
+  "spec": {
+    "ports": [
+      {
+        "protocol": "TCP",
+        "port": {{ $.PORT }},
+        "targetPort": {{ $.PORT }}
+      }
+    ],
+    "selector": {
+      "app": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+    }
+  }
+}

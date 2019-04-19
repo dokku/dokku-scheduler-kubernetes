@@ -1,0 +1,56 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
+    "labels": {
+      "app": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+    }
+  },
+  "spec": {
+    "replicas": "{{ $.PROCESS_COUNT }}",
+    "selector": {
+      "matchLabels": {
+        "app": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "{{ $.PROCESS_TYPE }}"
+            ],
+            "command": [
+              "/start"
+            ],
+            "image": "{{ $.IMAGE }}",
+            "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
+            "ports": [
+              {
+                "containerPort": "{{ $.PORT }}"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "{{ $.RESOURCES_LIMITS_CPU }}",
+                "memory": "{{ $.RESOURCES_LIMITS_MEMORY }}"
+              },
+              "requests": {
+                "cpu": "{{ $.RESOURCES_REQUESTS_CPU }}",
+                "memory": "{{ $.RESOURCES_REQUESTS_MEMORY }}"
+              }
+            }
+          }
+        ],
+        "replicas": "{{ $.REPLICAS }}",
+        "revisionHistoryLimit": 5
+      }
+    }
+  }
+}

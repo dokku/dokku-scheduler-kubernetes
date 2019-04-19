@@ -4,11 +4,20 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 source "$PLUGIN_CORE_AVAILABLE_PATH/config/functions"
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 
+fn-strip-ports() {
+  declare DEPLOYMENT_FILE="$1"
+  TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+
+  jq -M '.spec.template.spec.containers |= walk(if type == "object" and has("ports") then del(.ports) else . end)' < "$DEPLOYMENT_FILE" > "$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+}
 
 scheduler-kubernetes-scheduler-deploy() {
   declare desc="deploys an image tag for a given application"
   declare trigger="scheduler-kubernetes scheduler-deploy"
   declare DOKKU_SCHEDULER="$1" APP="$2" IMAGE_TAG="$3"
+  local DEPLOYMENT_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/deployment.json.sigil"
+  local SERVICE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/deployment.json.sigil"
 
   if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
     return
@@ -17,9 +26,8 @@ scheduler-kubernetes-scheduler-deploy() {
   local line PROC_TYPE PROC_COUNT CONTAINER_INDEX
   local DOKKU_SCALE_FILE="$DOKKU_ROOT/$APP/DOKKU_SCALE"
   local DEPLOYMENT_ID="$(date +%s)"
-  local TMP_JOB_FILE
-  TMP_JOB_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
-  trap 'rm -rf "$TMP_JOB_FILE" > /dev/null' RETURN INT TERM EXIT
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   dokku_log_info2 "Deploying via kubernetes"
   IMAGE=$(get_deploying_app_image_name "$APP" "$IMAGE_TAG")
@@ -37,21 +45,24 @@ scheduler-kubernetes-scheduler-deploy() {
     RESOURCE_LIMITS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "cpu" || echo "100m")
     RESOURCE_LIMITS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" || echo "256Mi")
 
-    local template="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/web.hcl.sigil"
-    [[ "$PROC_TYPE" != web ]] && template="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/background.hcl.sigil"
-
     # TODO: figure out a way to shim in environment variables
-    SIGIL_PARAMS=(-f "$template" APP="$APP"
+    SIGIL_PARAMS=(APP="$APP"
         RESOURCE_REQUESTS_CPU="$RESOURCE_REQUESTS_CPU" RESOURCE_REQUESTS_MEMORY="$RESOURCE_REQUESTS_MEMORY"
         RESOURCE_LIMITS_CPU="$RESOURCE_LIMITS_CPU" RESOURCE_LIMITS_MEMORY="$RESOURCE_LIMITS_MEMORY"
         IMAGE="$IMAGE"
-        ENVIRONMENT_VARIABLES=""
         REPLICAS="$PROC_COUNT" PROCESS_TYPE="$PROC_TYPE" PORT="5000")
 
-    sigil "${SIGIL_PARAMS[@]}" | cat -s > $TMP_JOB_FILE
+    sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s > $TMP_FILE
+    [[ "$PROC_TYPE" != "web" ]] && fn-strip-ports "$TMP_FILE"
 
-    kubectl apply -f "$TMP_JOB_FILE" | sed "s/^/       /"
+    kubectl apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" rollout track deployment "${APP}-${PROCESS_TYPE}" | sed "s/^/       /"
+
+    if [[ "$PROC_TYPE" == "web" ]]; then
+      sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s > $TMP_FILE
+      kubectl apply -f "$TMP_FILE" | sed "s/^/       /"
+      "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" rollout track service "${APP}-${PROCESS_TYPE}" | sed "s/^/       /"
+    fi
   done < "$DOKKU_SCALE_FILE"
 
   dokku_log_info2 "Deploy complete"
