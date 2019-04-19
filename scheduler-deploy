@@ -8,7 +8,7 @@ fn-strip-ports() {
   declare DEPLOYMENT_FILE="$1"
   TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
 
-  jq -M '.spec.template.spec.containers |= walk(if type == "object" and has("ports") then del(.ports) else . end)' < "$DEPLOYMENT_FILE" > "$TMP_FILE"
+  jq -M 'del(.spec.template.spec.containers[0].ports)' < "$DEPLOYMENT_FILE" > "$TMP_FILE"
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 }
 
