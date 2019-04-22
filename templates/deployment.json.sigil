@@ -4,20 +4,26 @@
   "metadata": {
     "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
     "labels": {
-      "app": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+      "app": "{{ $.APP }}",
+      "proces-type": "{{ $.PROCESS_TYPE }}",
+      "app-process-type": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
     }
   },
   "spec": {
     "replicas": "{{ $.PROCESS_COUNT }}",
     "selector": {
       "matchLabels": {
-        "app": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+        "app": "{{ $.APP }}",
+        "process-type": "{{ $.PROCESS_TYPE }}",
+        "app-process-type": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
       }
     },
     "template": {
       "metadata": {
         "labels": {
-          "app": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+          "app": "{{ $.APP }}",
+          "process-type": "{{ $.PROCESS_TYPE }}",
+          "app-process-type": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
         }
       },
       "spec": {
