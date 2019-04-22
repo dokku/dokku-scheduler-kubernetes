@@ -8,7 +8,7 @@ scheduler-kubernetes-scheduler-tags-create() {
   declare DOKKU_SCHEDULER="$1" APP="$2" SOURCE_IMAGE="$3" TARGET_IMAGE="$4"
   shift 2
 
-  if [[ "$DOKKU_SCHEDULER" != "docker-local" ]]; then
+  if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
     return
   fi
 

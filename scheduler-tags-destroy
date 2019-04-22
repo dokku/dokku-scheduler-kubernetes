@@ -8,7 +8,7 @@ scheduler-kubernetes-scheduler-tags-destroy() {
   declare DOKKU_SCHEDULER="$1" APP="$2" IMAGE_REPO="$3" IMAGE_TAG="$4"
   shift 2
 
-  if [[ "$DOKKU_SCHEDULER" != "docker-local" ]]; then
+  if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
     return
   fi
 

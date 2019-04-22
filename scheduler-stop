@@ -9,7 +9,7 @@ scheduler-kubernetes-scheduler-stop() {
   declare DOKKU_SCHEDULER="$1" APP="$2" REMOVE_CONTAINERS="$3"
   shift 2
 
-  if [[ "$DOKKU_SCHEDULER" != "docker-local" ]]; then
+  if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
     return
   fi
 
