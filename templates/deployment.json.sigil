@@ -29,6 +29,7 @@
             "command": [
               "/start"
             ],
+            "env": [],
             "image": "{{ $.IMAGE }}",
             "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
             "ports": [

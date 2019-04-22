@@ -15,17 +15,9 @@ fn-strip-ports() {
 fn-set-env-vars() {
   declare APP="$1" DEPLOYMENT_FILE="$2"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
-  local TMP_FILE_TWO=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
-  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
-  trap 'rm -rf "$TMP_FILE_TWO" > /dev/null' RETURN INT TERM EXIT
-  local key JSON_KEY JSON_VALUE
+  local key JSON_DATA
 
-  cat "$DEPLOYMENT_FILE" > "$TMP_FILE"
-  # TODO: Implement `dokku config:json` and use that to populate containers.env
-  while read -r key; do
-    JSON_KEY="$key" JSON_VALUE="$(dokku config:get "$APP" "$key")" jq -M ".spec.template.spec.containers[0].env += [{\"name\": env.JSON_KEY, \"value\": env.JSON_VALUE}]" < "$TMP_FILE" > "$TMP_FILE_TWO"
-    mv "$TMP_FILE_TWO" "$TMP_FILE"
-  done < <(dokku config:keys "$APP")
+  jq -M --argjson data "$(dokku config:export --format json-list "$APP")" ".spec.template.spec.containers[0].env += $data" < "$DEPLOYMENT_FILE" > "$TMP_FILE"
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 }
 
