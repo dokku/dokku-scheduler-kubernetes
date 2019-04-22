@@ -21,6 +21,37 @@ fn-set-env-vars() {
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 }
 
+fn-set-resource-constraints() {
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  RESOURCE_LIMITS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "cpu" || true)
+  RESOURCE_LIMITS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" || true)
+  RESOURCE_REQUESTS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "reserve" "cpu" || true)
+  RESOURCE_REQUESTS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" || true)
+
+  if [[ "$RESOURCE_LIMITS_CPU" ]]; then
+    RESOURCE_LIMITS_CPU="$RESOURCE_LIMITS_CPU" jq -M ".spec.template.spec.containers[0].resources.limits.cpu = env.RESOURCE_LIMITS_CPU" < "$DEPLOYMENT_FILE" > "$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+
+  if [[ "$RESOURCE_LIMITS_CPU" ]]; then
+    RESOURCE_LIMITS_MEMORY="$RESOURCE_LIMITS_MEMORY" jq -M ".spec.template.spec.containers[0].resources.limits.memory = env.RESOURCE_LIMITS_MEMORY" < "$DEPLOYMENT_FILE" > "$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+
+  if [[ "$RESOURCE_LIMITS_CPU" ]]; then
+    RESOURCE_REQUESTS_CPU="$RESOURCE_REQUESTS_CPU" jq -M ".spec.template.spec.containers[0].resources.requests.cpu = env.RESOURCE_REQUESTS_CPU" < "$DEPLOYMENT_FILE" > "$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+
+  if [[ "$RESOURCE_LIMITS_CPU" ]]; then
+    RESOURCE_REQUESTS_MEMORY="$RESOURCE_REQUESTS_MEMORY" jq -M ".spec.template.spec.containers[0].resources.requests.memory = env.RESOURCE_REQUESTS_MEMORY" < "$DEPLOYMENT_FILE" > "$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+}
+
 scheduler-kubernetes-scheduler-deploy() {
   declare desc="deploys an image tag for a given application"
   declare trigger="scheduler-kubernetes scheduler-deploy"
@@ -49,21 +80,13 @@ scheduler-kubernetes-scheduler-deploy() {
     PROC_COUNT=${line#*=}
 
     dokku_log_info1 "Deploying ${PROC_TYPE} to ${PROC_COUNT}"
-    RESOURCE_REQUESTS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "reserve" "cpu" || echo "100m")
-    RESOURCE_REQUESTS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" || echo "256Mi")
-    RESOURCE_LIMITS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "cpu" || echo "100m")
-    RESOURCE_LIMITS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" || echo "256Mi")
 
-    SIGIL_PARAMS=(APP="$APP"
-        RESOURCE_REQUESTS_CPU="$RESOURCE_REQUESTS_CPU" RESOURCE_REQUESTS_MEMORY="$RESOURCE_REQUESTS_MEMORY"
-        RESOURCE_LIMITS_CPU="$RESOURCE_LIMITS_CPU" RESOURCE_LIMITS_MEMORY="$RESOURCE_LIMITS_MEMORY"
-        IMAGE="$IMAGE"
-        REPLICAS="$PROC_COUNT" PROCESS_TYPE="$PROC_TYPE" PORT="5000")
+    SIGIL_PARAMS=(APP="$APP" IMAGE="$IMAGE" REPLICAS="$PROC_COUNT" PROCESS_TYPE="$PROC_TYPE" PORT="5000")
 
     sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s > $TMP_FILE
     [[ "$PROC_TYPE" != "web" ]] && fn-strip-ports "$TMP_FILE"
     fn-set-env-vars "$APP" "$TMP_FILE"
-
+    fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
 
     kubectl apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" rollout track deployment "${APP}-${PROCESS_TYPE}" | sed "s/^/       /"

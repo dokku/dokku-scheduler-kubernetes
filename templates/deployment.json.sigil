@@ -45,12 +45,8 @@
             ],
             "resources": {
               "limits": {
-                "cpu": "{{ $.RESOURCES_LIMITS_CPU }}",
-                "memory": "{{ $.RESOURCES_LIMITS_MEMORY }}"
               },
               "requests": {
-                "cpu": "{{ $.RESOURCES_REQUESTS_CPU }}",
-                "memory": "{{ $.RESOURCES_REQUESTS_MEMORY }}"
               }
             }
           }
