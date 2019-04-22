@@ -62,7 +62,8 @@ scheduler-kubernetes-scheduler-deploy() {
 
     sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s > $TMP_FILE
     [[ "$PROC_TYPE" != "web" ]] && fn-strip-ports "$TMP_FILE"
-    fn-set-env-vars "$TMP_FILE"
+    fn-set-env-vars "$APP" "$TMP_FILE"
+
 
     kubectl apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" rollout track deployment "${APP}-${PROCESS_TYPE}" | sed "s/^/       /"
