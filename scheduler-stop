@@ -18,7 +18,7 @@ scheduler-kubernetes-scheduler-stop() {
     return
   fi
 
-  dokku_log_warn "Not implemented for kubernetes"
+  kubectl scale --replicas=0 --selector app="$APP"
 }
 
 scheduler-kubernetes-scheduler-stop "$@"
