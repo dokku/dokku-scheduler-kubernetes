@@ -81,7 +81,7 @@ scheduler-kubernetes-scheduler-deploy() {
 
     dokku_log_info1 "Deploying ${PROC_TYPE} to ${PROC_COUNT}"
 
-    SIGIL_PARAMS=(APP="$APP" IMAGE="$IMAGE" REPLICAS="$PROC_COUNT" PROCESS_TYPE="$PROC_TYPE" PORT="5000")
+    SIGIL_PARAMS=(APP="$APP" IMAGE="$IMAGE" PROCESS_COUNT="$PROC_COUNT" PROCESS_TYPE="$PROC_TYPE" PORT="5000")
 
     sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s > $TMP_FILE
     [[ "$PROC_TYPE" != "web" ]] && fn-strip-ports "$TMP_FILE"

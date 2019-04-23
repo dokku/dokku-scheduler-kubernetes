@@ -51,7 +51,6 @@
             }
           }
         ],
-        "replicas": "{{ $.REPLICAS }}",
         "revisionHistoryLimit": 5
       }
     }
