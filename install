@@ -14,8 +14,8 @@ scheduler-kubernetes-install() {
 
   local KUBEDOG_VENDOR_URL="${KUBEDOG_VENDOR_URL:-"https://dl.bintray.com"}"
   local KUBEDOG_VERSION="v0.1.0"
-  curl -L "${KUBEDOG_VENDOR_URL}/flant/kubedog/${KUBEDOG_VERSION}/kubedog-linux-amd64-${KUBEDOG_VERSION}" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
-  chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
+  curl -L "${KUBEDOG_VENDOR_URL}/flant/kubedog/${KUBEDOG_VERSION}/kubedog-linux-amd64-${KUBEDOG_VERSION}" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubedog"
+  chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubedog"
 
   if ! command -v jq &>/dev/null; then
     dokku_log_warn "This plugin script requires jq. Please call 'sudo dokku plugin:install-dependencies' to install this package."
