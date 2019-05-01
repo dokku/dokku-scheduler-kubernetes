@@ -14,13 +14,13 @@ scheduler-kubernetes-install() {
 
   local KUBECTL_VENDOR_URL="${KUBECTL_VENDOR_URL:-"https://storage.googleapis.com"}"
   local KUBECTL_VERSION="${KUBECTL_VERSION:-v1.14.1}"
-  curl -L "${KUBECTL_VENDOR_URL}/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubectl"
-  chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubectl"
+  curl -L "${KUBECTL_VENDOR_URL}/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
+  chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
 
   local KUBEDOG_VENDOR_URL="${KUBEDOG_VENDOR_URL:-"https://dl.bintray.com"}"
   local KUBEDOG_VERSION="${KUBEDOG_VERSION:-v0.1.0}"
-  curl -L "${KUBEDOG_VENDOR_URL}/flant/kubedog/${KUBEDOG_VERSION}/kubedog-linux-amd64-${KUBEDOG_VERSION}" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubedog"
-  chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubedog"
+  curl -L "${KUBEDOG_VENDOR_URL}/flant/kubedog/${KUBEDOG_VERSION}/kubedog-linux-amd64-${KUBEDOG_VERSION}" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
+  chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
 
   if ! command -v jq &>/dev/null; then
     dokku_log_warn "This plugin script requires jq. Please call 'sudo dokku plugin:install-dependencies' to install this package."
