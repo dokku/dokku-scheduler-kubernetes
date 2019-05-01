@@ -18,7 +18,7 @@ scheduler-kubernetes-scheduler-stop() {
     return
   fi
 
-  kubectl scale --replicas=0 --selector app="$APP"
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubectl" scale --replicas=0 --selector app="$APP"
 }
 
 scheduler-kubernetes-scheduler-stop "$@"

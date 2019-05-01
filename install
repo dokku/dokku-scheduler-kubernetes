@@ -12,6 +12,10 @@ scheduler-kubernetes-install() {
 
   fn-plugin-property-setup "scheduler-kubernetes"
 
+  local KUBECTL_VENDOR_URL="${KUBECTL_VENDOR_URL:-"https://storage.googleapis.com"}"
+  local KUBECTL_VERSION="${KUBECTL_VERSION:-v1.14.1}"
+  curl -L "${KUBECTL_VENDOR_URL}/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubectl"
+  chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubectl"
 
   local KUBEDOG_VENDOR_URL="${KUBEDOG_VENDOR_URL:-"https://dl.bintray.com"}"
   local KUBEDOG_VERSION="${KUBEDOG_VERSION:-v0.1.0}"

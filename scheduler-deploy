@@ -88,12 +88,12 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-env-vars "$APP" "$TMP_FILE"
     fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
 
-    kubectl apply -f "$TMP_FILE" | sed "s/^/       /"
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubedog" rollout track deployment "${APP}-${PROCESS_TYPE}" | sed "s/^/       /"
 
     if [[ "$PROC_TYPE" == "web" ]]; then
       sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s > $TMP_FILE
-      kubectl apply -f "$TMP_FILE" | sed "s/^/       /"
+      "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
       "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/bin/kubedog" rollout track service "${APP}-${PROCESS_TYPE}" | sed "s/^/       /"
     fi
   done < "$DOKKU_SCALE_FILE"
