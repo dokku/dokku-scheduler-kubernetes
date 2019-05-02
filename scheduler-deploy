@@ -17,7 +17,7 @@ fn-set-env-vars() {
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   local key JSON_DATA
 
-  jq -M --argjson data "$(config_export app "$APP" --format json-list --merged)" ".spec.template.spec.containers[0].env += $data" < "$DEPLOYMENT_FILE" > "$TMP_FILE"
+  jq -M --argjson data "$(config_export app "$APP" --format json-list --merged)" '.spec.template.spec.containers[0].env += $data' < "$DEPLOYMENT_FILE" > "$TMP_FILE"
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 }
 
