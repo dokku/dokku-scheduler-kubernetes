@@ -10,7 +10,8 @@
     }
   },
   "spec": {
-    "replicas": "{{ $.PROCESS_COUNT }}",
+    "replicas": {{ $.PROCESS_COUNT }},
+    "revisionHistoryLimit": 5,
     "selector": {
       "matchLabels": {
         "app": "{{ $.APP }}",
@@ -40,7 +41,7 @@
             "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
             "ports": [
               {
-                "containerPort": "{{ $.PORT }}"
+                "containerPort": {{ $.PORT }}
               }
             ],
             "resources": {
@@ -50,8 +51,7 @@
               }
             }
           }
-        ],
-        "revisionHistoryLimit": 5
+        ]
       }
     }
   }
