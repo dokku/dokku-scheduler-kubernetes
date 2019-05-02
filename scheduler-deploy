@@ -26,10 +26,10 @@ fn-set-resource-constraints() {
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
-  RESOURCE_LIMITS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "cpu" || true)
-  RESOURCE_LIMITS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" || true)
-  RESOURCE_REQUESTS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "reserve" "cpu" || true)
-  RESOURCE_REQUESTS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" || true)
+  RESOURCE_LIMITS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "cpu" 2> /dev/null|| true)
+  RESOURCE_LIMITS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" 2> /dev/null || true)
+  RESOURCE_REQUESTS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "reserve" "cpu" 2> /dev/null || true)
+  RESOURCE_REQUESTS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" 2> /dev/null || true)
 
   if [[ "$RESOURCE_LIMITS_CPU" ]]; then
     RESOURCE_LIMITS_CPU="$RESOURCE_LIMITS_CPU" jq -M ".spec.template.spec.containers[0].resources.limits.cpu = env.RESOURCE_LIMITS_CPU" < "$DEPLOYMENT_FILE" > "$TMP_FILE"
