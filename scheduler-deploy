@@ -74,7 +74,6 @@ scheduler-kubernetes-scheduler-deploy() {
   plugn trigger pre-deploy "$APP" "$IMAGE_TAG"
 
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
-  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" config get-contexts
 
   while read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ ^#.* ]] && continue
