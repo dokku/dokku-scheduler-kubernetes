@@ -13,7 +13,17 @@ scheduler-kubernetes-post-delete() {
     return
   fi
 
-  # todo: tell kubernetes to stop all jobs for this app
+  while read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^#.* ]] && continue
+    line="$(strip_inline_comments "$line")"
+    PROC_TYPE=${line%%=*}
+    PROC_COUNT=${line#*=}
+
+    if [[ "$PROC_TYPE" == "web" ]]; then
+      "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" delete service "${APP}-${PROC_TYPE}"
+    fi
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" delete deployment "${APP}-${PROC_TYPE}"
+  done < "$DOKKU_SCALE_FILE"
 }
 
 scheduler-kubernetes-post-delete "$@"
