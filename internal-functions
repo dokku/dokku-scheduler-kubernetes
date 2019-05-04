@@ -35,6 +35,7 @@ cmd-scheduler-kubernetes-report-single() {
   verify_app_name "$APP"
   local flag_map=(
     "--scheduler-kubernetes-addr: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "kubernetes-server" "")"
+    "--scheduler-kubernetes-namespace: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   )
 
   if [[ -z "$INFO_FLAG" ]]; then

@@ -17,12 +17,12 @@ scheduler-kubernetes-set-cmd() {
   declare desc="set or clear a scheduler-kubernetes property for an app"
   local cmd="scheduler-kubernetes:set" argv=("$@"); [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare APP="$1" KEY="$2" VALUE="$3"
-  local VALID_KEYS=("kubernetes-addr")
+  local VALID_KEYS=("kubernetes-addr" "namespace")
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
   [[ -z "$KEY" ]] && dokku_log_fail "No key specified"
 
   if ! fn-in-array "$KEY" "${VALID_KEYS[@]}"; then
-    dokku_log_fail "Invalid key specified, valid keys include: kubernetes-addr"
+    dokku_log_fail "Invalid key specified, valid keys include: kubernetes-addr, namespace"
   fi
 
   if [[ -n "$VALUE" ]]; then

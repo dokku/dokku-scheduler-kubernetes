@@ -1,16 +1,24 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 source "$PLUGIN_AVAILABLE_PATH/config/functions"
 
 scheduler-kubernetes-post-delete() {
   declare desc="scheduler-kubernetes post-delete plugin trigger"
   declare trigger="scheduler-kubernetes post-delete"
   declare APP="$1"
+  local KUBE_ARGS NAMESPACE
 
   local DOKKU_SCHEDULER=$(config_get "$APP" DOKKU_SCHEDULER || echo "docker-local")
   if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
     return
+  fi
+
+  KUBE_ARGS=()
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
+  if [[ -n "$NAMESPACE" ]]; then
+      KUBE_ARGS+=("--namespace=$NAMESPACE")
   fi
 
   while read -r line || [[ -n "$line" ]]; do
@@ -20,9 +28,9 @@ scheduler-kubernetes-post-delete() {
     PROC_COUNT=${line#*=}
 
     if [[ "$PROC_TYPE" == "web" ]]; then
-      "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" delete service "${APP}-${PROC_TYPE}"
+      "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete service "${APP}-${PROC_TYPE}"
     fi
-    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" delete deployment "${APP}-${PROC_TYPE}"
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete deployment "${APP}-${PROC_TYPE}"
   done < "$DOKKU_SCALE_FILE"
 }
 

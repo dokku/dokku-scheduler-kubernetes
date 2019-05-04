@@ -58,6 +58,7 @@ scheduler-kubernetes-scheduler-deploy() {
   declare DOKKU_SCHEDULER="$1" APP="$2" IMAGE_TAG="$3"
   local DEPLOYMENT_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/deployment.json.sigil"
   local SERVICE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/deployment.json.sigil"
+  local KUBE_ARGS NAMESPACE
 
   if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
     return
@@ -75,6 +76,12 @@ scheduler-kubernetes-scheduler-deploy() {
 
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
 
+  KUBE_ARGS=()
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
+  if [[ -n "$NAMESPACE" ]]; then
+      KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fi
+
   while read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ ^#.* ]] && continue
     line="$(strip_inline_comments "$line")"
@@ -90,13 +97,13 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-env-vars "$APP" "$TMP_FILE"
     fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
 
-    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
-    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" rollout track deployment "${APP}-${PROC_TYPE}" | sed "s/^/       /"
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" rollout track deployment "${APP}-${PROC_TYPE}" | sed "s/^/       /"
 
     if [[ "$PROC_TYPE" == "web" ]]; then
       sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s > $TMP_FILE
-      "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
-      # "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" rollout track service "${APP}-${PROC_TYPE}" | sed "s/^/       /"
+      "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
+      # "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" rollout track service "${APP}-${PROC_TYPE}" | sed "s/^/       /"
     fi
   done < "$DOKKU_SCALE_FILE"
 

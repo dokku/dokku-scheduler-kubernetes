@@ -33,6 +33,12 @@ dokku registry:set node-js-sample server gcr.io/dokku/
 
 Assuming your Dokku installation can push to the registry and your kubeconfig is valid, Dokku will deploy the application against the cluster.
 
+The namespace in use for a particular app can be customized using the `scheduler-kubernetes:set` command. This will apply to all future invocations of the plugin, and will not modify any existing resources.
+
+```shell
+dokku scheduler-kubernetes:set APP namespace test
+```
+
 ## Notes
 
 - Dockerfile deploys are not currently supported.
