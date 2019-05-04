@@ -7,7 +7,6 @@ scheduler-kubernetes-scheduler-stop() {
   declare desc="scheduler-kubernetes scheduler-stop plugin trigger"
   declare trigger="scheduler-kubernetes scheduler-stop"
   declare DOKKU_SCHEDULER="$1" APP="$2" REMOVE_CONTAINERS="$3"
-  shift 2
   local KUBE_ARGS NAMESPACE
 
   if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then

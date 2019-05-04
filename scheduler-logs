@@ -7,7 +7,6 @@ scheduler-kubernetes-scheduler-logs() {
   declare desc="scheduler-kubernetes scheduler-logs plugin trigger"
   declare trigger="scheduler-kubernetes scheduler-logs"
   declare DOKKU_SCHEDULER="$1" APP="$2" PROCESS_TYPE="$3" TAIL="$4" PRETTY_PRINT="$5" NUM="$6"
-  shift 2
   local KUBE_ARGS NAMESPACE
 
   if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
