@@ -16,7 +16,7 @@ Set the scheduler to `kubernetes`. This can be done per-app or globally:
 dokku config:set --global DOKKU_SCHEDULER=kubernetes
 
 # per-app
-dokku config:set node-js-sample DOKKU_SCHEDULER=kubernetes
+dokku config:set APP DOKKU_SCHEDULER=kubernetes
 ```
 
 You also need to ensure your kubectl has the correct context specified:
@@ -28,7 +28,7 @@ kubectl config use-context YOUR_NAME
 And configure your registry:
 
 ```shell
-dokku registry:set node-js-sample server gcr.io/dokku/
+dokku registry:set APP server gcr.io/dokku/
 ```
 
 Assuming your Dokku installation can push to the registry and your kubeconfig is valid, Dokku will deploy the application against the cluster.
