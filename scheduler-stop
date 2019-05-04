@@ -18,6 +18,8 @@ scheduler-kubernetes-scheduler-stop() {
     return
   fi
 
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
   KUBE_ARGS=()
   NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   if [[ -n "$NAMESPACE" ]]; then
