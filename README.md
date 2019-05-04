@@ -50,3 +50,4 @@ dokku scheduler-kubernetes:set APP namespace test
 - Resource limits and requests are supported from the `resource` plugin (Kubernetes requests are Dokku reservations).
 - The Dokku commands `run`, `enter`, and `logs:failed` are not supported.
 - A custom nginx configuration - or a different proxy plugin implementation - will be needed in order to talk to the Kubernetes `Service` upstream.
+- Custom docker-options are not supported.
