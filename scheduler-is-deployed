@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+
+scheduler-kubernetes-scheduler-is-deployed() {
+  declare desc="scheduler-kubernetes scheduler-is-deployed plugin trigger"
+  declare trigger="scheduler-kubernetes scheduler-is-deployed"
+  declare DOKKU_SCHEDULER="$1" APP="$2"
+  local KUBE_OUTPUT
+  shift 2
+
+  if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
+    return
+  fi
+
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
+  KUBE_ARGS=()
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
+  if [[ -n "$NAMESPACE" ]]; then
+      KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fi
+
+  KUBE_OUTPUT="$("${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" get pods --selector app="$APP" -o name 2>/dev/null || true)"
+  if [[ -n "$KUBE_OUTPUT" ]]; then
+    return 0
+  fi
+  return 1
+}
+
+scheduler-kubernetes-scheduler-is-deployed "$@"
