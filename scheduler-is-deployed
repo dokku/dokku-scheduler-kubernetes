@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 
 scheduler-kubernetes-scheduler-is-deployed() {
   declare desc="scheduler-kubernetes scheduler-is-deployed plugin trigger"
