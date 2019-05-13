@@ -15,8 +15,8 @@ scheduler-kubernetes-install() {
   local KUBECTL_VENDOR_URL="${KUBECTL_VENDOR_URL:-"https://storage.googleapis.com"}"
   local KUBECTL_VERSION="${KUBECTL_VERSION:-v1.14.1}"
   if [[ ! -f "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl-${KUBECTL_VERSION}" ]]; then
-    curl -L "${KUBECTL_VENDOR_URL}/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
-    mv "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl-${KUBEDOG_VERSION}" "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
+    curl -L "${KUBECTL_VENDOR_URL}/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl-${KUBECTL_VERSION}"
+    mv "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl-${KUBECTL_VERSION}" "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
     chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
   fi
 
