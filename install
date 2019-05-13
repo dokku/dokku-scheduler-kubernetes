@@ -14,14 +14,20 @@ scheduler-kubernetes-install() {
 
   local KUBECTL_VENDOR_URL="${KUBECTL_VENDOR_URL:-"https://storage.googleapis.com"}"
   local KUBECTL_VERSION="${KUBECTL_VERSION:-v1.14.1}"
-  curl -L "${KUBECTL_VENDOR_URL}/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
-  chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
+  if [[ ! -f "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl-${KUBECTL_VERSION}" ]]; then
+    curl -L "${KUBECTL_VENDOR_URL}/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
+    mv "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl-${KUBEDOG_VERSION}" "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
+    chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
+  fi
 
   local KUBEDOG_VENDOR_URL="${KUBEDOG_VENDOR_URL:-"https://dl.bintray.com"}"
   local KUBEDOG_VERSION="${KUBEDOG_VERSION:-v0.1.0}"
-  # curl -L "${KUBEDOG_VENDOR_URL}/flant/kubedog/${KUBEDOG_VERSION}/kubedog-linux-amd64-${KUBEDOG_VERSION}" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
-  curl -L "https://github.com/dokku/dokku-scheduler-kubernetes/releases/download/0.0.1-beta/kubedog-linux-amd64-0.2.0" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
-  chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
+  if [[ ! -f "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog-${KUBEDOG_VERSION}" ]]; then
+    # curl -L "${KUBEDOG_VENDOR_URL}/flant/kubedog/${KUBEDOG_VERSION}/kubedog-linux-amd64-${KUBEDOG_VERSION}" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog-${KUBEDOG_VERSION}"
+    curl -L "https://github.com/dokku/dokku-scheduler-kubernetes/releases/download/0.0.1-beta/kubedog-linux-amd64-0.2.0" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog-${KUBEDOG_VERSION}"
+    mv "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog-${KUBEDOG_VERSION}" "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
+    chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
+  fi
 
   if ! command -v jq &>/dev/null; then
     dokku_log_warn "This plugin script requires jq. Please call 'sudo dokku plugin:install-dependencies' to install this package."
