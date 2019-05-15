@@ -102,7 +102,7 @@ scheduler-kubernetes-scheduler-deploy() {
     if [[ "$PROC_TYPE" == "web" ]]; then
       sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s > $TMP_FILE
       "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
-      "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" rollout status "service/${APP}-${PROC_TYPE}" --timeout 10m --watch | sed "s/^/       /"
+      # "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" rollout status "service/${APP}-${PROC_TYPE}" --timeout 10m --watch | sed "s/^/       /"
     fi
   done < "$DOKKU_SCALE_FILE"
 
