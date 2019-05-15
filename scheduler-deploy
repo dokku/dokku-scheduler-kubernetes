@@ -36,17 +36,17 @@ fn-set-resource-constraints() {
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
 
-  if [[ "$RESOURCE_LIMITS_CPU" ]]; then
+  if [[ "$RESOURCE_LIMITS_MEMORY" ]]; then
     RESOURCE_LIMITS_MEMORY="$RESOURCE_LIMITS_MEMORY" jq -M ".spec.template.spec.containers[0].resources.limits.memory = env.RESOURCE_LIMITS_MEMORY" < "$DEPLOYMENT_FILE" > "$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
 
-  if [[ "$RESOURCE_LIMITS_CPU" ]]; then
+  if [[ "$RESOURCE_REQUESTS_CPU" ]]; then
     RESOURCE_REQUESTS_CPU="$RESOURCE_REQUESTS_CPU" jq -M ".spec.template.spec.containers[0].resources.requests.cpu = env.RESOURCE_REQUESTS_CPU" < "$DEPLOYMENT_FILE" > "$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
 
-  if [[ "$RESOURCE_LIMITS_CPU" ]]; then
+  if [[ "$RESOURCE_REQUESTS_MEMORY" ]]; then
     RESOURCE_REQUESTS_MEMORY="$RESOURCE_REQUESTS_MEMORY" jq -M ".spec.template.spec.containers[0].resources.requests.memory = env.RESOURCE_REQUESTS_MEMORY" < "$DEPLOYMENT_FILE" > "$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
