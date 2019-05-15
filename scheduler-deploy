@@ -75,7 +75,6 @@ scheduler-kubernetes-scheduler-deploy() {
   plugn trigger pre-deploy "$APP" "$IMAGE_TAG"
 
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
-  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
   KUBE_ARGS=()
   NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   if [[ -n "$NAMESPACE" ]]; then
@@ -98,12 +97,12 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
 
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
-    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" rollout track deployment "${APP}-${PROC_TYPE}" | sed "s/^/       /"
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" rollout status "deployment/${APP}-${PROC_TYPE}" --timeout 10m --watch | sed "s/^/       /"
 
     if [[ "$PROC_TYPE" == "web" ]]; then
       sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s > $TMP_FILE
       "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
-      # "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" rollout track service "${APP}-${PROC_TYPE}" | sed "s/^/       /"
+      "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" rollout status "service/${APP}-${PROC_TYPE}" --timeout 10m --watch | sed "s/^/       /"
     fi
   done < "$DOKKU_SCALE_FILE"
 

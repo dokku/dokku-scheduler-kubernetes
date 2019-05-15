@@ -44,7 +44,7 @@ dokku scheduler-kubernetes:set APP namespace test
 - Dockerfile deploys are not currently supported.
 - Each `Procfile` entry will be turned into a kubernetes `Deployment` object.
 - The `web` process will also create a `Service` object.
-- All created Kubernetes objects are tracked to completion via `kubedog`.
+- All created Kubernetes objects are tracked to completion via `kubectl`.
 - Templates for `Deployment` and `Service` objects are hardcoded in the plugin.
 - Environment variables are set plaintext in the deployment object.
 - Resource limits and requests are supported from the `resource` plugin (Kubernetes requests are Dokku reservations).
