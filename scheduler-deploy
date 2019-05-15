@@ -22,7 +22,7 @@ fn-set-env-vars() {
 }
 
 fn-set-resource-constraints() {
-  declare APP="$1" DEPLOYMENT_FILE="$2"
+  declare APP="$1" PROC_TYPE="$2" DEPLOYMENT_FILE="$3"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
