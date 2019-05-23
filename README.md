@@ -9,16 +9,16 @@ A Dokku plugin to integrate with kubernetes.
 
 ## Installation
 
-You can install this plugin by issueing the command:
+You can install this plugin by issuing the command:
 
 ```shell
 dokku plugin:install https://github.com/dokku/dokku-scheduler-kubernetes
 ```
 
-After the plugin has successfully installed you need to install the plugin's depencies for this you can run:
+After the plugin has successfully been installed you need to install the plugin's dependencies by running the command:
 
 ```shell
-dokku plugin:install-dependencie
+dokku plugin:install-dependencies
 ```
 
 ## Usage
