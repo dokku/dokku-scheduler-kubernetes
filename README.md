@@ -7,6 +7,20 @@ A Dokku plugin to integrate with kubernetes.
 - The `dokku-registry` plugin should be installed and configured for your application
 - A configured kubectl (`/home/dokku/.kube/config`) that can talk to your cluster
 
+## Installation
+
+You can install this plugin by issuing the command:
+
+```shell
+dokku plugin:install https://github.com/dokku/dokku-scheduler-kubernetes
+```
+
+After the plugin has successfully been installed you need to install the plugin's dependencies by running the command:
+
+```shell
+dokku plugin:install-dependencies
+```
+
 ## Usage
 
 Set the scheduler to `kubernetes`. This can be done per-app or globally:
