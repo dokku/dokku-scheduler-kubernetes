@@ -4,7 +4,9 @@
   "metadata": {
     "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
     "labels": {
-      "app": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+      "app": "{{ $.APP }}",
+      "proces-type": "{{ $.PROCESS_TYPE }}",
+      "app-process-type": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
     }
   },
   "spec": {
@@ -16,7 +18,9 @@
       }
     ],
     "selector": {
-      "app": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+      "app": "{{ $.APP }}",
+      "proces-type": "{{ $.PROCESS_TYPE }}",
+      "app-process-type": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
     }
   }
 }
