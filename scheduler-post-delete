@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
-source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 source "$PLUGIN_AVAILABLE_PATH/config/functions"
 
 scheduler-kubernetes-post-delete() {
   declare desc="scheduler-kubernetes post-delete plugin trigger"
   declare trigger="scheduler-kubernetes post-delete"
-  declare APP="$1"
+  declare DOKKU_SCHEDULER="$1" APP="$2"
   local KUBE_ARGS NAMESPACE
 
-  local DOKKU_SCHEDULER=$(config_get "$APP" DOKKU_SCHEDULER || echo "docker-local")
   if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
     return
   fi
