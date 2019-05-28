@@ -26,7 +26,16 @@ scheduler-kubernetes-scheduler-stop() {
     KUBE_ARGS+=("--namespace=$NAMESPACE")
   fi
 
-  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" scale --replicas=0 --selector app="$APP"
+  while read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^#.* ]] && continue
+    line="$(strip_inline_comments "$line")"
+    PROC_TYPE=${line%%=*}
+    PROC_COUNT=${line#*=}
+
+    if "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" get deployment "${APP}-${PROC_TYPE}" 2>/dev/null; then
+      "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" scale --replicas=0 "deployment/${APP}-${PROC_TYPE}"
+    fi
+  done <"$DOKKU_SCALE_FILE"
 }
 
 scheduler-kubernetes-scheduler-stop "$@"
