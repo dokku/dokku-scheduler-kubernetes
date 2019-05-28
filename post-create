@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
 
 scheduler-kubernetes-post-create() {
   declare desc="scheduler-kubernetes post-create plugin trigger"

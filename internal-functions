@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 
@@ -44,7 +45,8 @@ cmd-scheduler-kubernetes-report-single() {
       dokku_log_verbose "$(printf "%-30s %-25s" "${key^}" "${flag#*: }")"
     done
   else
-    local match=false; local value_exists=false
+    local match=false
+    local value_exists=false
     for flag in "${flag_map[@]}"; do
       valid_flags="${valid_flags} $(echo "$flag" | cut -d':' -f1)"
       if [[ "$flag" == "${INFO_FLAG}:"* ]]; then
@@ -64,14 +66,14 @@ cmd-scheduler-kubernetes-report-single() {
 
 scheduler_docker_local_help_content_func() {
   declare desc="return scheduler-kubernetes plugin help content"
-  cat<<help_content
+  cat <<help_content
     scheduler-kubernetes:report [<app>] [<flag>], Displays a scheduler-kubernetes report for one or more apps
     scheduler-kubernetes:set <app> <property> (<value>), Set or clear a scheduler-kubernetes property for an app
 help_content
 }
 
 cmd-scheduler-kubernetes-help() {
-  if [[ $1 = "scheduler-kubernetes:help" ]] ; then
+  if [[ $1 == "scheduler-kubernetes:help" ]]; then
     echo -e 'Usage: dokku scheduler-kubernetes[:COMMAND]'
     echo ''
     echo 'Manages the scheduler-kubernetes integration for an app.'
@@ -82,7 +84,7 @@ cmd-scheduler-kubernetes-help() {
   elif [[ $(ps -o command= $PPID) == *"--all"* ]]; then
     scheduler_docker_local_help_content_func
   else
-    cat<<help_desc
+    cat <<help_desc
     scheduler-kubernetes, Manages the scheduler-kubernetes integration for an app
 help_desc
   fi

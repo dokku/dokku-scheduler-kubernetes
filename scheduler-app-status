@@ -7,7 +7,7 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 scheduler-app-status() {
   declare desc="fetches the status for a given app"
   declare trigger="scheduler-kubernetes scheduler-app-status"
-  declare DOKKU_SCHEDULER="$1" APP="$2" 
+  declare DOKKU_SCHEDULER="$1" APP="$2"
   local KUBE_OUTPUT
   shift 2
 
@@ -19,7 +19,7 @@ scheduler-app-status() {
   KUBE_ARGS=()
   NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   if [[ -n "$NAMESPACE" ]]; then
-      KUBE_ARGS+=("--namespace=$NAMESPACE")
+    KUBE_ARGS+=("--namespace=$NAMESPACE")
   fi
 
   local PROCS=0 RUNNING=""
