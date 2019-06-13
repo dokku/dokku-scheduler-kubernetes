@@ -5,7 +5,7 @@
     "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
     "labels": {
       "app": "{{ $.APP }}",
-      "proces-type": "{{ $.PROCESS_TYPE }}",
+      "process-type": "{{ $.PROCESS_TYPE }}",
       "app-process-type": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
     }
   },
@@ -19,7 +19,7 @@
     ],
     "selector": {
       "app": "{{ $.APP }}",
-      "proces-type": "{{ $.PROCESS_TYPE }}",
+      "process-type": "{{ $.PROCESS_TYPE }}",
       "app-process-type": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
     }
   }
