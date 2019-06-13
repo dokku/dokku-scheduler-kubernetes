@@ -4,6 +4,7 @@ set -eo pipefail
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 source "$PLUGIN_AVAILABLE_PATH/config/functions"
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
 
 fn-strip-ports() {
   declare DEPLOYMENT_FILE="$1"
@@ -80,6 +81,7 @@ scheduler-kubernetes-scheduler-deploy() {
   NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE"
   fi
 
   while read -r line || [[ -n "$line" ]]; do

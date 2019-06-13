@@ -89,3 +89,15 @@ cmd-scheduler-kubernetes-help() {
 help_desc
   fi
 }
+
+fn-scheduler-kubernetes-ensure-namespace() {
+  declare NAMESPACE="$1"
+  local NAMESPACE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/namespace.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  SIGIL_PARAMS=(NAME="$NAMESPACE")
+  sigil -f "$NAMESPACE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
+}

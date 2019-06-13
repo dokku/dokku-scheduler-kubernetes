@@ -3,6 +3,7 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
 
 scheduler-kubernetes-scheduler-logs() {
   declare desc="scheduler-kubernetes scheduler-logs plugin trigger"
@@ -24,6 +25,7 @@ scheduler-kubernetes-scheduler-logs() {
   NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE"
   fi
 
   local LOGS_ARGS="--tail $NUM"
