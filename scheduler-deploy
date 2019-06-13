@@ -17,10 +17,19 @@ fn-strip-ports() {
 fn-set-env-vars() {
   declare APP="$1" DEPLOYMENT_FILE="$2"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
-  local key JSON_DATA
 
   jq -M --argjson data "$(config_export app "$APP" --format json-list --merged)" '.spec.template.spec.containers[0].env += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+}
+
+fn-set-ports() {
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+
+  if is_image_herokuish_based "$IMAGE"; then
+    jq -M --argjson data "[{\"name\": \"PORT\", \"value\": \"5000\"}]" '.spec.template.spec.containers[0].env += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
 }
 
 fn-set-resource-constraints() {
@@ -97,6 +106,7 @@ scheduler-kubernetes-scheduler-deploy() {
     sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
     [[ "$PROC_TYPE" != "web" ]] && fn-strip-ports "$TMP_FILE"
     fn-set-env-vars "$APP" "$TMP_FILE"
+    fn-set-ports "$APP" "$TMP_FILE"
     fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
 
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
