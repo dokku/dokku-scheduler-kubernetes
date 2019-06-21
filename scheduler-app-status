@@ -21,7 +21,7 @@ scheduler-app-status() {
   NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
-    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE"
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
   fi
 
   local PROCS=0 RUNNING=""

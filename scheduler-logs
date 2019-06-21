@@ -25,7 +25,7 @@ scheduler-kubernetes-scheduler-logs() {
   NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
-    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE"
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
   fi
 
   local LOGS_ARGS="--tail $NUM"

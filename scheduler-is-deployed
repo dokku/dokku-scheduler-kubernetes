@@ -21,7 +21,7 @@ scheduler-kubernetes-scheduler-is-deployed() {
   NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
-    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE"
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
   fi
 
   KUBE_OUTPUT="$("${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" get pods --selector app="$APP" -o name 2>/dev/null || true)"
