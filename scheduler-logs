@@ -33,4 +33,4 @@ scheduler-kubernetes-scheduler-logs() {
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" logs -l "$LABEL"
 }
 
-scheduler-kubernetes-scheduler-logs-failed "$@"
+scheduler-kubernetes-scheduler-logs "$@"
