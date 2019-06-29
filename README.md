@@ -53,6 +53,12 @@ The namespace in use for a particular app can be customized using the `scheduler
 dokku scheduler-kubernetes:set APP namespace test
 ```
 
+If deploying from a private docker registry and the cluster needs does not have open access to the registry, an `imagePullSecrets` value can be specified. This will be injected into the kubernetes deployment spec at deploy time.
+
+```shell
+dokku scheduler-kubernetes:set APP imagePullSecrets registry-credential
+```
+
 ## Notes
 
 - Dockerfile deploys are not currently supported.

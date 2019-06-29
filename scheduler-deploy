@@ -22,6 +22,17 @@ fn-set-env-vars() {
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 }
 
+fn-set-image-pull-secrets() {
+  declare IMAGE_PULL_SECRETS="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  if [[ -n "$IMAGE_PULL_SECRETS" ]]; then
+    IMAGE_PULL_SECRETS="$IMAGE_PULL_SECRETS" jq -M ".spec.template.spec.imagePullSecrets = env.IMAGE_PULL_SECRETS" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+}
+
 fn-set-ports() {
   declare APP="$1" DEPLOYMENT_FILE="$2"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
@@ -93,6 +104,8 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE"
   fi
 
+  IMAGE_PULL_SECRETS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "imagePullSecrets" "")"
+
   while read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ ^#.* ]] && continue
     line="$(strip_inline_comments "$line")"
@@ -108,6 +121,7 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-env-vars "$APP" "$TMP_FILE"
     fn-set-ports "$APP" "$TMP_FILE"
     fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
+    fn-set-image-pull-secrets "IMAGE_PULL_SECRETS" "TMP_FILE"
 
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" rollout status "deployment/${APP}-${PROC_TYPE}" --timeout 10m --watch | sed "s/^/       /"
