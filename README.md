@@ -59,6 +59,8 @@ If deploying from a private docker registry and the cluster needs does not have 
 dokku scheduler-kubernetes:set APP imagePullSecrets registry-credential
 ```
 
+> See [this doc](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) for more details on creating an `imagePullSecrets` secret file.
+
 ## Notes
 
 - Dockerfile deploys are not currently supported.
