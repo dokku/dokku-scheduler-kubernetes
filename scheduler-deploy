@@ -123,7 +123,7 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-env-vars "$APP" "$TMP_FILE"
     fn-set-ports "$APP" "$TMP_FILE"
     fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
-    fn-set-image-pull-secrets "IMAGE_PULL_SECRETS" "TMP_FILE"
+    fn-set-image-pull-secrets "$IMAGE_PULL_SECRETS" "$TMP_FILE"
 
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track deployment "${APP}-${PROC_TYPE}" | sed "s/^/       /"
