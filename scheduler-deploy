@@ -36,6 +36,7 @@ fn-set-image-pull-secrets() {
 fn-set-ports() {
   declare APP="$1" DEPLOYMENT_FILE="$2"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   if is_image_herokuish_based "$IMAGE"; then
     jq -M --argjson data "[{\"name\": \"PORT\", \"value\": \"5000\"}]" '.spec.template.spec.containers[0].env += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
