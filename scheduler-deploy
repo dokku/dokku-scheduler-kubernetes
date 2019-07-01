@@ -126,12 +126,12 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-image-pull-secrets "$IMAGE_PULL_SECRETS" "$TMP_FILE"
 
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
-    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track deployment "${APP}-${PROC_TYPE}" | sed "s/^/       /"
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track deployment "${APP}-${PROC_TYPE}"
 
     if [[ "$PROC_TYPE" == "web" ]]; then
       sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
       "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
-      # "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track service "${APP}-${PROC_TYPE}" | sed "s/^/       /"
+      # "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track service "${APP}-${PROC_TYPE}"
     fi
   done <"$DOKKU_SCALE_FILE"
 
