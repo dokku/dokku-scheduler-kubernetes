@@ -103,7 +103,7 @@ scheduler-kubernetes-scheduler-deploy() {
   NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
-    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE"
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
   fi
 
   IMAGE_PULL_SECRETS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "imagePullSecrets" "")"
