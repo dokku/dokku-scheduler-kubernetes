@@ -36,7 +36,7 @@ cmd-scheduler-kubernetes-rolling-update() {
     line="$(strip_inline_comments "$line")"
     PROC_TYPE=${line%%=*}
     
-    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" patch deployment "${APP}-${PROC_TYPE}" --patch "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"dokku-restart-time\":\"$(date -u "+%Y-%m-%d-%H-%M-%S")\"}}}}}" | sed "s/^/       /"
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" patch deployment "${APP}-${PROC_TYPE}" --patch "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"dokku.com/rolling-update-time\":\"$(date -u "+%Y-%m-%d-%H-%M-%S")\"}}}}}" | sed "s/^/       /"
   done <"$DOKKU_SCALE_FILE"
 }
 
