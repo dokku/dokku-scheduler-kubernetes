@@ -61,6 +61,12 @@ dokku scheduler-kubernetes:set APP imagePullSecrets registry-credential
 
 > See [this doc](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) for more details on creating an `imagePullSecrets` secret file.
 
+For deployments that use a `rollingUpdate` for rollouts, a `rollingUpdate` may be triggered at a later date via the `scheduler-kubernetes:rolling-update` command.
+
+```shell
+dokku scheduler-kubernetes:rolling-update APP
+```
+
 ## Notes
 
 - Dockerfile deploys are not currently supported.

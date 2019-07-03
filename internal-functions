@@ -4,6 +4,42 @@ set -eo pipefail
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 
+cmd-scheduler-kubernetes-rolling-update() {
+  declare desc="force a rolling update"
+  local cmd="scheduler-kubernetes:rolling-update" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare APP="$1"
+
+  local DOKKU_SCHEDULER=$(get_app_scheduler "$APP")
+  if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
+    dokku_log_fail "Scheduler for $APP is set to $DOKKU_SCHEDULER"
+    return 1
+  fi
+
+  local DOKKU_SCALE_FILE="$DOKKU_ROOT/$APP/DOKKU_SCALE"
+  if [[ ! -f "$DOKKU_SCALE_FILE" ]]; then
+    dokku_log_fail "No processes found for $APP"
+    return 1
+  fi
+
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
+  KUBE_ARGS=()
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
+  if [[ -n "$NAMESPACE" ]]; then
+    KUBE_ARGS+=("--namespace=$NAMESPACE")
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  fi
+
+  while read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^#.* ]] && continue
+    line="$(strip_inline_comments "$line")"
+    PROC_TYPE=${line%%=*}
+    
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" patch deployment "${APP}-${PROC_TYPE}" --patch "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"dokku-restart-time\":\"{{ date.stdout }}\"}}}}}" | sed "s/^/       /"
+  done <"$DOKKU_SCALE_FILE"
+}
+
 cmd-scheduler-kubernetes-report() {
   declare desc="displays a scheduler-kubernetes report for one or more apps"
   local cmd="scheduler-kubernetes:report"
