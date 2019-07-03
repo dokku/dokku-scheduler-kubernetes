@@ -31,6 +31,7 @@ cmd-scheduler-kubernetes-rolling-update() {
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
   fi
 
+  dokku_log_info1 "Triggering rolling-update for $APP"
   while read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ ^#.* ]] && continue
     line="$(strip_inline_comments "$line")"
