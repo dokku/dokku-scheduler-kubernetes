@@ -75,6 +75,35 @@ fn-set-resource-constraints() {
   fi
 }
 
+fn-set-healthchecks() {
+  declare APP="$1" PROC_TYPE="$2" DEPLOYMENT_FILE="$3"
+  local TMP_DIR=$(mktemp -d "/tmp/${FUNCNAME[0]}.XXXX")
+  local APP_JSON_TMPL="$TMP_DIR/app.json.sigil"
+  local APP_JSON_FILE="$TMP_DIR/app.json"
+  local PROBE_FILE="$TMP_DIR/probe.json"
+  local DEPLOYMENT_TMP_FILE="$TMP_DIR/deployment.json"
+  trap 'rm -rf "$TMP_DIR" > /dev/null' RETURN INT TERM EXIT
+
+  copy_from_image "$IMAGE" "app.json" "$APP_JSON_TMPL" 2>/dev/null || true
+
+  if [[ ! -f "$APP_JSON_TMPL" ]]; then
+    return 0
+  fi
+
+  # We use sigil templating to allow the health check configurations to refer
+  # to the app name with the variable $APP.
+  SIGIL_PARAMS=(APP="$APP")
+  sigil -f "$APP_JSON_TMPL" "${SIGIL_PARAMS[@]}" | cat -s >$APP_JSON_FILE
+
+  for PROBE_TYPE in liveness readiness; do
+    if     jq -e -M ".healthchecks.\"$PROC_TYPE\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE" \
+       ||  jq -e -M ".healthchecks.\"*\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE"; then
+      jq -M --argjson data "$(cat "$PROBE_FILE")" ".spec.template.spec.containers[0].${PROBE_TYPE}Probe += \$data" <"$DEPLOYMENT_FILE" >"$DEPLOYMENT_TMP_FILE"
+      mv "$DEPLOYMENT_TMP_FILE" "$DEPLOYMENT_FILE"
+    fi
+  done
+}
+
 scheduler-kubernetes-scheduler-deploy() {
   declare desc="deploys an image tag for a given application"
   declare trigger="scheduler-kubernetes scheduler-deploy"
@@ -124,6 +153,7 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-ports "$APP" "$TMP_FILE"
     fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
     fn-set-image-pull-secrets "$IMAGE_PULL_SECRETS" "$TMP_FILE"
+    fn-set-healthchecks "$APP" "$PROC_TYPE" "$TMP_FILE"
 
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track deployment "${APP}-${PROC_TYPE}"

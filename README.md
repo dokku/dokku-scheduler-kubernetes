@@ -67,6 +67,56 @@ For deployments that use a `rollingUpdate` for rollouts, a `rollingUpdate` may b
 dokku scheduler-kubernetes:rolling-update APP
 ```
 
+Health checks for the app may be configured in `app.json`, based on [Kubernetes
+liveness and readiness
+probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/).
+All Kubernetes options that can occur within a [Probe
+object](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.14/#probe-v1-core)
+are supported, though syntax is JSON rather than YAML. The variable `$APP` may
+be used to represent the app name.
+
+If a process type is not configured for a given probe type (liveness or
+readiness), any probe of the same type for the `"*"` default process type is
+used instead.
+
+<details><summary>Here (click the triangle to expand) is an example JSON for
+Kubernetes health checks.</summary><p>
+
+```json
+{
+	"healthchecks": {
+		"web": {
+			"readiness": {
+				"httpGet": {
+					"path": "/{{ $APP }}/readiness_check",
+					"port": 5000
+				},
+				"initialDelaySeconds": 5,
+				"periodSeconds": 5
+			}
+		},
+		"*": {
+			"liveness": {
+				"exec": {
+					"command": ["/bin/pidof", "/start"]
+				},
+				"initialDelaySeconds": 5,
+				"periodSeconds": 5
+			},
+			"readiness": {
+				"httpGet": {
+					"path": "web processes override this.",
+					"port": 5000
+				},
+				"initialDelaySeconds": 5,
+				"periodSeconds": 5
+			}
+		}
+	}
+}
+```
+</p></details>
+
 ## Notes
 
 - Dockerfile deploys are not currently supported.
