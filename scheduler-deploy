@@ -28,7 +28,7 @@ fn-set-image-pull-secrets() {
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   if [[ -n "$IMAGE_PULL_SECRETS" ]]; then
-    IMAGE_PULL_SECRETS="$IMAGE_PULL_SECRETS" jq -M ".spec.template.spec.imagePullSecrets = env.IMAGE_PULL_SECRETS" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    IMAGE_PULL_SECRETS="$IMAGE_PULL_SECRETS" jq -M ".spec.template.spec.imagePullSecrets[0].name = env.IMAGE_PULL_SECRETS" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
 }
