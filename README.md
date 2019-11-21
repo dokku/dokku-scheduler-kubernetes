@@ -4,7 +4,7 @@ A Dokku plugin to integrate with kubernetes.
 
 ## Requirements
 
-- The `dokku-registry` plugin should be installed and configured for your application
+- The `dokku-registry` plugin should be installed and configured for your app
 - A configured kubectl (`/home/dokku/.kube/config`) that can talk to your cluster
 
 ## Installation
@@ -45,7 +45,7 @@ And configure your registry:
 dokku registry:set APP server gcr.io/dokku/
 ```
 
-Assuming your Dokku installation can push to the registry and your kubeconfig is valid, Dokku will deploy the application against the cluster.
+Assuming your Dokku installation can push to the registry and your kubeconfig is valid, Dokku will deploy the app against the cluster.
 
 The namespace in use for a particular app can be customized using the `scheduler-kubernetes:set` command. This will apply to all future invocations of the plugin, and will not modify any existing resources. The `scheduler-kubernetes` will create the namespace via a `kubectl apply`.
 
@@ -61,11 +61,15 @@ dokku scheduler-kubernetes:set APP imagePullSecrets registry-credential
 
 > See [this doc](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) for more details on creating an `imagePullSecrets` secret file.
 
+### Rolling Updates
+
 For deployments that use a `rollingUpdate` for rollouts, a `rollingUpdate` may be triggered at a later date via the `scheduler-kubernetes:rolling-update` command.
 
 ```shell
 dokku scheduler-kubernetes:rolling-update APP
 ```
+
+### Health Checks
 
 Health checks for the app may be configured in `app.json`, based on [Kubernetes
 liveness and readiness
