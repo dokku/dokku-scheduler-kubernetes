@@ -5,9 +5,9 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 source "$PLUGIN_AVAILABLE_PATH/config/functions"
 source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
 
-scheduler-kubernetes-post-delete() {
-  declare desc="scheduler-kubernetes post-delete plugin trigger"
-  declare trigger="scheduler-kubernetes post-delete"
+scheduler-kubernetes-scheduler-post-delete() {
+  declare desc="scheduler-kubernetes scheduler-post-delete plugin trigger"
+  declare trigger="scheduler-kubernetes scheduler-post-delete"
   declare DOKKU_SCHEDULER="$1" APP="$2"
   local KUBE_ARGS NAMESPACE
 
@@ -27,4 +27,4 @@ scheduler-kubernetes-post-delete() {
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete pods,services,deployments -l app="$APP"
 }
 
-scheduler-kubernetes-post-delete "$@"
+scheduler-kubernetes-scheduler-post-delete "$@"
