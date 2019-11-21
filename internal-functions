@@ -106,6 +106,7 @@ scheduler_docker_local_help_content_func() {
   declare desc="return scheduler-kubernetes plugin help content"
   cat <<help_content
     scheduler-kubernetes:report [<app>] [<flag>], Displays a scheduler-kubernetes report for one or more apps
+    scheduler-kubernetes:rolling-update <app>, Force a rolling update
     scheduler-kubernetes:set <app> <property> (<value>), Set or clear a scheduler-kubernetes property for an app
 help_content
 }
