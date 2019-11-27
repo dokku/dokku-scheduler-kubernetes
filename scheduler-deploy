@@ -104,6 +104,48 @@ fn-set-healthchecks() {
   done
 }
 
+fn-set-deployment-annotations() {
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  ANNOTATION_COUNT="$(fn-plugin-property-list-length "scheduler-kubernetes" "$APP" "deployment-annotations")"
+  if [[ "$ANNOTATION_COUNT" == 0 ]]; then
+    return
+  fi
+
+  jq -M --argjson data "{}" '.metadata.annotations += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+
+  while IFS="" read -r p || [ -n "$p" ]; do
+    local KEY="$(echo "$p" | cut -d' ' -f1)"
+    local VALUE="$(echo "$p" | cut -d' ' -f2)"
+    KEY=KEY VALUE=VALUE jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  done < fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "deployment-annotations"
+}
+
+fn-set-service-annotations() {
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  ANNOTATION_COUNT="$(fn-plugin-property-list-length "scheduler-kubernetes" "$APP" "service-annotations")"
+  if [[ "$ANNOTATION_COUNT" == 0 ]]; then
+    return
+  fi
+
+  jq -M --argjson data "{}" '.metadata.annotations += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+
+  while IFS="" read -r p || [ -n "$p" ]; do
+    local KEY="$(echo "$p" | cut -d' ' -f1)"
+    local VALUE="$(echo "$p" | cut -d' ' -f2)"
+    KEY=KEY VALUE=VALUE jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  done < fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "service-annotations"
+}
+
 scheduler-kubernetes-scheduler-deploy() {
   declare desc="deploys an image tag for a given application"
   declare trigger="scheduler-kubernetes scheduler-deploy"
@@ -154,12 +196,14 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
     fn-set-image-pull-secrets "$IMAGE_PULL_SECRETS" "$TMP_FILE"
     fn-set-healthchecks "$APP" "$PROC_TYPE" "$TMP_FILE"
+    fn-set-deployment-annotations "$APP"  "$TMP_FILE"
 
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track deployment "${APP}-${PROC_TYPE}"
 
     if [[ "$PROC_TYPE" == "web" ]]; then
       sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+      fn-set-service-annotations "$APP"  "$TMP_FILE"
       "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
       # "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track service "${APP}-${PROC_TYPE}"
     fi
