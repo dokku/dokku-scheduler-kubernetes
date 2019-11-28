@@ -16,7 +16,7 @@ fn-in-array() {
 
 scheduler-kubernetes-deployment-annotations-set-cmd() {
   declare desc="set or clear a scheduler-kubernetes deployment annotation for an app"
-  local cmd="scheduler-kubernetes:set" argv=("$@")
+  local cmd="scheduler-kubernetes:deployment-annotations-set" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare APP="$1" KEY="$2" VALUE="$3"
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
