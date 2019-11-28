@@ -120,9 +120,9 @@ fn-set-deployment-annotations() {
   while IFS="" read -r p || [ -n "$p" ]; do
     local KEY="$(echo "$p" | cut -d' ' -f1)"
     local VALUE="$(echo "$p" | cut -d' ' -f2)"
-    KEY=KEY VALUE=VALUE jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    KEY="$KEY" VALUE="$VALUE" jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
-  done <$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "deployment-annotations")
+  done < <(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "deployment-annotations")
 }
 
 fn-set-service-annotations() {
@@ -141,9 +141,9 @@ fn-set-service-annotations() {
   while IFS="" read -r p || [ -n "$p" ]; do
     local KEY="$(echo "$p" | cut -d' ' -f1)"
     local VALUE="$(echo "$p" | cut -d' ' -f2)"
-    KEY=KEY VALUE=VALUE jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    KEY="$KEY" VALUE="$VALUE" jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
-  done <$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "service-annotations")
+  done < <(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "service-annotations")
 }
 
 scheduler-kubernetes-scheduler-deploy() {
