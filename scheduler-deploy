@@ -96,8 +96,8 @@ fn-set-healthchecks() {
   sigil -f "$APP_JSON_TMPL" "${SIGIL_PARAMS[@]}" | cat -s >$APP_JSON_FILE
 
   for PROBE_TYPE in liveness readiness; do
-    if     jq -e -M ".healthchecks.\"$PROC_TYPE\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE" \
-       ||  jq -e -M ".healthchecks.\"*\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE"; then
+    if jq -e -M ".healthchecks.\"$PROC_TYPE\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE" \
+      || jq -e -M ".healthchecks.\"*\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE"; then
       jq -M --argjson data "$(cat "$PROBE_FILE")" ".spec.template.spec.containers[0].${PROBE_TYPE}Probe += \$data" <"$DEPLOYMENT_FILE" >"$DEPLOYMENT_TMP_FILE"
       mv "$DEPLOYMENT_TMP_FILE" "$DEPLOYMENT_FILE"
     fi
@@ -122,7 +122,7 @@ fn-set-deployment-annotations() {
     local VALUE="$(echo "$p" | cut -d' ' -f2)"
     KEY=KEY VALUE=VALUE jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
-  done < fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "deployment-annotations"
+  done <$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "deployment-annotations")
 }
 
 fn-set-service-annotations() {
@@ -143,7 +143,7 @@ fn-set-service-annotations() {
     local VALUE="$(echo "$p" | cut -d' ' -f2)"
     KEY=KEY VALUE=VALUE jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
-  done < fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "service-annotations"
+  done <$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "service-annotations")
 }
 
 scheduler-kubernetes-scheduler-deploy() {
@@ -196,14 +196,14 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
     fn-set-image-pull-secrets "$IMAGE_PULL_SECRETS" "$TMP_FILE"
     fn-set-healthchecks "$APP" "$PROC_TYPE" "$TMP_FILE"
-    fn-set-deployment-annotations "$APP"  "$TMP_FILE"
+    fn-set-deployment-annotations "$APP" "$TMP_FILE"
 
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track deployment "${APP}-${PROC_TYPE}"
 
     if [[ "$PROC_TYPE" == "web" ]]; then
       sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
-      fn-set-service-annotations "$APP"  "$TMP_FILE"
+      fn-set-service-annotations "$APP" "$TMP_FILE"
       "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
       # "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track service "${APP}-${PROC_TYPE}"
     fi
