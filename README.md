@@ -82,6 +82,23 @@ dokku scheduler-kubernetes:deployment-annotations-set node-js-sample pod.kuberne
 
 Currently, these apply globally to all processes within a deployed app.
 
+#### Pod Annotations
+
+These can be managed by the `scheduler-kubernetes:pod-annotations-set` command.
+
+```shell
+# command structure
+dokku scheduler-kubernetes:pod-annotations-set APP name value
+
+# set example
+dokku scheduler-kubernetes:pod-annotations-set node-js-sample pod.kubernetes.io/lifetime 86400s
+
+# unset example, leave the value empty
+dokku scheduler-kubernetes:pod-annotations-set node-js-sample pod.kubernetes.io/lifetime
+```
+
+Currently, these apply globally to all processes within a deployed app.
+
 #### Service Annotations
 
 These can be managed by the `scheduler-kubernetes:service-annotations-set` command.
