@@ -61,6 +61,61 @@ dokku scheduler-kubernetes:set APP imagePullSecrets registry-credential
 
 > See [this doc](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) for more details on creating an `imagePullSecrets` secret file.
 
+### Annotations
+
+> Warning: There is no validation for on annotation keys or values.
+
+#### Deployment Annotations
+
+These can be managed by the `scheduler-kubernetes:deployment-annotations-set` command.
+
+```shell
+# command structure
+dokku scheduler-kubernetes:deployment-annotations-set APP name value
+
+# set example
+dokku scheduler-kubernetes:deployment-annotations-set node-js-sample pod.kubernetes.io/lifetime 86400s
+
+# unset example, leave the value empty
+dokku scheduler-kubernetes:deployment-annotations-set node-js-sample pod.kubernetes.io/lifetime
+```
+
+Currently, these apply globally to all processes within a deployed app.
+
+#### Pod Annotations
+
+These can be managed by the `scheduler-kubernetes:pod-annotations-set` command.
+
+```shell
+# command structure
+dokku scheduler-kubernetes:pod-annotations-set APP name value
+
+# set example
+dokku scheduler-kubernetes:pod-annotations-set node-js-sample pod.kubernetes.io/lifetime 86400s
+
+# unset example, leave the value empty
+dokku scheduler-kubernetes:pod-annotations-set node-js-sample pod.kubernetes.io/lifetime
+```
+
+Currently, these apply globally to all processes within a deployed app.
+
+#### Service Annotations
+
+These can be managed by the `scheduler-kubernetes:service-annotations-set` command.
+
+```shell
+# command structure
+dokku scheduler-kubernetes:service-annotations-set APP name value
+
+# set example
+dokku scheduler-kubernetes:service-annotations-set node-js-sample pod.kubernetes.io/lifetime 86400s
+
+# unset example, leave the value empty
+dokku scheduler-kubernetes:service-annotations-set node-js-sample pod.kubernetes.io/lifetime
+```
+
+Currently, they are applied to the `web` process, which is the only process for which a Kubernetes Service is created.
+
 ### Rolling Updates
 
 For deployments that use a `rollingUpdate` for rollouts, a `rollingUpdate` may be triggered at a later date via the `scheduler-kubernetes:rolling-update` command.
