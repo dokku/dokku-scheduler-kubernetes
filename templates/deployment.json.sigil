@@ -38,6 +38,7 @@
             ],
             "env": [],
             "image": "{{ $.IMAGE }}",
+            "imagePullPolicy": "Always",
             "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
             "ports": [
               {
