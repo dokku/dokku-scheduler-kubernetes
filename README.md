@@ -6,6 +6,7 @@ A Dokku plugin to integrate with kubernetes.
 
 - The `dokku-registry` plugin should be installed and configured for your app
 - A configured kubectl (`/home/dokku/.kube/config`) that can talk to your cluster
+- Dokku 0.20.4+
 
 ## Installation
 
