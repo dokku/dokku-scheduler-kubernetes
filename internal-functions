@@ -106,8 +106,11 @@ cmd-scheduler-kubernetes-report-single() {
 scheduler_docker_local_help_content_func() {
   declare desc="return scheduler-kubernetes plugin help content"
   cat <<help_content
+    scheduler-kubernetes:deployment-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes deployment annotation for an app
+    scheduler-kubernetes:pod-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes pod annotation for an app
     scheduler-kubernetes:report [<app>] [<flag>], Displays a scheduler-kubernetes report for one or more apps
     scheduler-kubernetes:rolling-update <app>, Force a rolling update
+    scheduler-kubernetes:service-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes service annotation for an app
     scheduler-kubernetes:set <app> <property> (<value>), Set or clear a scheduler-kubernetes property for an app
 help_content
 }
