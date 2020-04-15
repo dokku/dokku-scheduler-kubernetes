@@ -177,6 +177,40 @@ Kubernetes health checks.</summary><p>
 ```
 </p></details>
 
+## Plugin Triggers
+
+The following custom triggers are exposed by the plugin:
+
+### `post-deploy-kubernetes-apply`
+
+- Description: Allows a user to interact with the `deployment` manifest after it has been submitted.
+- Invoked by:
+- Arguments: `$APP` `$PROC_TYPE` `$MANIFEST_FILE` `MANIFEST_TYPE`
+- Example:
+
+```shell
+#!/usr/bin/env bash
+
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+
+# TODO
+```
+
+### `pre-deploy-kubernetes-apply`
+
+- Description: Allows a user to interact with the `deployment|service` manifest after it has been submitted.
+- Invoked by: `scheduler-deploy` trigger
+- Arguments: `$APP` `$PROC_TYPE` `$MANIFEST_FILE` `MANIFEST_TYPE`
+- Example:
+
+```shell
+#!/usr/bin/env bash
+
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+
+# TODO
+```
+
 ## Notes
 
 - Dockerfile deploys are not currently supported.
