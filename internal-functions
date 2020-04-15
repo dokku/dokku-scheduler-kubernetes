@@ -259,8 +259,13 @@ fn-set-resource-constraints() {
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
 
-  if [[ -n "$RESOURCE_LIMITS_NVIDIA_GPU" ]]; then
-    RESOURCE_LIMITS_NVIDIA_GPU="$RESOURCE_LIMITS_NVIDIA_GPU" jq -M '.spec.template.spec.containers[0].resources.limits.["nvidia.com/gpu"] = env.RESOURCE_LIMITS_NVIDIA_GPU' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+  if [[ -n "$RESOURCE_LIMITS_NVIDIA_GPU" ]] && [[ "$RESOURCE_LIMITS_NVIDIA_GPU" != "0" ]]; then
+    re='^[0-9]+$'
+    if [[ "$RESOURCE_LIMITS_NVIDIA_GPU" =~ $re ]]; then
+      RESOURCE_LIMITS_NVIDIA_GPU="$RESOURCE_LIMITS_NVIDIA_GPU" jq -M '.spec.template.spec.containers[0].resources.limits["nvidia.com/gpu"] = (env.RESOURCE_LIMITS_NVIDIA_GPU|tonumber)' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    else
+      RESOURCE_LIMITS_NVIDIA_GPU="$RESOURCE_LIMITS_NVIDIA_GPU" jq -M '.spec.template.spec.containers[0].resources.limits["nvidia.com/gpu"] = env.RESOURCE_LIMITS_NVIDIA_GPU' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    fi
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
 
