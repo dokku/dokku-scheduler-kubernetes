@@ -62,6 +62,33 @@ dokku scheduler-kubernetes:set APP imagePullSecrets registry-credential
 
 > See [this doc](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) for more details on creating an `imagePullSecrets` secret file.
 
+### Kubernetes Manifests
+
+> Warning: Running this command exposes app environment variables to stdout.
+
+The kubernetes manifest for a deployment or service can be displayed using the `scheduler-kubernetes:show-manifest` command. This manifest can be used to inspect what would be submitted to Kubernetes.
+
+```shell
+# show the deployment manifest for the `web` process type
+dokku scheduler-kubernetes:show-manifest APP PROC_TYPE MANIFEST_TYPE
+```
+
+This command can be used like so:
+
+```shell
+# show the deployment manifest for the `web` process type
+dokku scheduler-kubernetes:show-manifest node-js-sample web
+
+
+# implicitly specify the deployment manifest
+dokku scheduler-kubernetes:show-manifest node-js-sample web deployment
+
+# show the service manifest for the `web` process type
+dokku scheduler-kubernetes:show-manifest node-js-sample web service
+```
+
+The command will exit non-zero if the specific manifest for the given app/process type combination is not found.
+
 ### Annotations
 
 > Warning: There is no validation for on annotation keys or values.
@@ -199,7 +226,7 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 ### `pre-deploy-kubernetes-apply`
 
 - Description: Allows a user to interact with the `deployment|service` manifest after it has been submitted.
-- Invoked by: `scheduler-deploy` trigger
+- Invoked by: `scheduler-deploy` trigger and `scheduler-kubernetes:show-manifest`
 - Arguments: `$APP` `$PROC_TYPE` `$MANIFEST_FILE` `MANIFEST_TYPE`
 - Example:
 

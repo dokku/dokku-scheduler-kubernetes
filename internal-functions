@@ -112,6 +112,7 @@ scheduler_docker_local_help_content_func() {
     scheduler-kubernetes:rolling-update <app>, Force a rolling update
     scheduler-kubernetes:service-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes service annotation for an app
     scheduler-kubernetes:set <app> <property> (<value>), Set or clear a scheduler-kubernetes property for an app
+    scheduler-kubernetes:show-manifest <app> <proc_type> (<manifest_type>), Display the deployment or service manifest for a given app/process type combination
 help_content
 }
 

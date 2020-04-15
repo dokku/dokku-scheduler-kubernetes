@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
+
+cmd-scheduler-kubernetes-show-manifest() {
+  declare desc="display the deployment or service manifest for a given app/process type combination"
+  declare cmd="scheduler-kubernetes:show-manifest" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare APP="$1" PROC_TYPE="${2:-web}" MANIFEST_TYPE="${3:-deployment}"
+
+  [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
+  [[ -z "$PROC_TYPE" ]] && dokku_log_fail "No process type specified"
+  [[ -z "$MANIFEST_TYPE" ]] && dokku_log_fail "No manifest type specified"
+
+  verify_app_name "$APP"
+  local DOKKU_SCHEDULER=$(get_app_scheduler "$APP")
+  [[ "$DOKKU_SCHEDULER" != "kubernetes" ]] || dokku_log_fail "Scheduler for $APP is set to $DOKKU_SCHEDULER"
+
+  local DEPLOYMENT_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/deployment.json.sigil"
+  local SERVICE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/service.json.sigil"
+  local DOKKU_SCALE_FILE="$DOKKU_ROOT/$APP/DOKKU_SCALE"
+  local FOUND=false
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  local IMAGE_TAG="$(get_running_image_tag "$APP")"
+  local IMAGE=$(get_deploying_app_image_name "$APP" "$IMAGE_TAG")
+
+  while read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^#.* ]] && continue
+    line="$(strip_inline_comments "$line")"
+    CURRENT_PROC_TYPE=${line%%=*}
+    PROC_COUNT=${line#*=}
+
+    if [[ "$CURRENT_PROC_TYPE" != "$PROC_TYPE" ]]; then
+      continue
+    fi
+
+    FOUND=true
+    local SIGIL_PARAMS=(APP="$APP" IMAGE="$IMAGE" PROCESS_COUNT="$PROC_COUNT" PROCESS_TYPE="$PROC_TYPE" PORT="5000")
+
+    sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+    [[ "$PROC_TYPE" != "web" ]] && fn-strip-ports "$TMP_FILE"
+    fn-set-env-vars "$APP" "$TMP_FILE"
+    fn-set-ports "$APP" "$TMP_FILE"
+    fn-set-resource-constraints "$APP" "$PROC_TYPE" "$TMP_FILE"
+    fn-set-image-pull-secrets "$IMAGE_PULL_SECRETS" "$TMP_FILE"
+    fn-set-healthchecks "$APP" "$PROC_TYPE" "$TMP_FILE"
+    fn-set-deployment-annotations "$APP" "$TMP_FILE"
+    fn-set-pod-annotations "$APP" "$TMP_FILE"
+
+    plugn trigger pre-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" deployment
+    if [[ "$MANIFEST_TYPE" == "deployment" ]]; then
+      cat "$TMP_FILE"
+      return
+    fi
+
+    if [[ "$PROC_TYPE" == "web" ]]; then
+      sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+      fn-set-service-annotations "$APP" "$TMP_FILE"
+      plugn trigger pre-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" service
+
+      cat "$TMP_FILE"
+      return
+    fi
+  done <"$DOKKU_SCALE_FILE"
+
+  if [[ "$FOUND" != "true" ]]; then
+    dokku_log_fail "Unable to find $MANIFEST_TYPE for process type $PROC_TYPE"
+  fi
+}
+
+
+cmd-scheduler-kubernetes-show-manifest "$@"
