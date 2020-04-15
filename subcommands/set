@@ -4,9 +4,9 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
-scheduler-kubernetes-set-cmd() {
+cmd-scheduler-kubernetes-set() {
   declare desc="set or clear a scheduler-kubernetes property for an app"
-  local cmd="scheduler-kubernetes:set" argv=("$@")
+  declare cmd="scheduler-kubernetes:set" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare APP="$1" KEY="$2" VALUE="$3"
   local VALID_KEYS=("imagePullSecrets" "namespace")
@@ -26,4 +26,4 @@ scheduler-kubernetes-set-cmd() {
   fi
 }
 
-scheduler-kubernetes-set-cmd "$@"
+cmd-scheduler-kubernetes-set "$@"

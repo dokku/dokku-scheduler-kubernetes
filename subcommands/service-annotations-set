@@ -4,9 +4,9 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
-scheduler-kubernetes-service-annotations-set-cmd() {
+cmd-scheduler-kubernetes-service-annotations-set() {
   declare desc="set or clear a scheduler-kubernetes service annotation for an app"
-  local cmd="scheduler-kubernetes:service-annotations-set" argv=("$@")
+  declare cmd="scheduler-kubernetes:service-annotations-set" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare APP="$1" KEY="$2" VALUE="$3"
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
@@ -21,4 +21,4 @@ scheduler-kubernetes-service-annotations-set-cmd() {
   fi
 }
 
-scheduler-kubernetes-service-annotations-set-cmd "$@"
+cmd-scheduler-kubernetes-service-annotations-set "$@"
