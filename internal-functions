@@ -140,3 +140,170 @@ fn-scheduler-kubernetes-ensure-namespace() {
 
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
 }
+
+fn-set-deployment-annotations() {
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  ANNOTATION_COUNT="$(fn-plugin-property-list-length "scheduler-kubernetes" "$APP" "deployment-annotations")"
+  if [[ "$ANNOTATION_COUNT" == 0 ]]; then
+    return
+  fi
+
+  jq -M --argjson data "{}" '.metadata.annotations += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+
+  while IFS="" read -r p || [ -n "$p" ]; do
+    local KEY="$(echo "$p" | cut -d' ' -f1)"
+    local VALUE="$(echo "$p" | cut -d' ' -f2)"
+    KEY="$KEY" VALUE="$VALUE" jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  done < <(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "deployment-annotations")
+}
+
+fn-set-env-vars() {
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+
+  jq -M --argjson data "$(config_export app "$APP" --format json-list --merged)" '.spec.template.spec.containers[0].env += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+}
+
+fn-set-healthchecks() {
+  declare APP="$1" PROC_TYPE="$2" DEPLOYMENT_FILE="$3"
+  local TMP_DIR=$(mktemp -d "/tmp/${FUNCNAME[0]}.XXXX")
+  local APP_JSON_TMPL="$TMP_DIR/app.json.sigil"
+  local APP_JSON_FILE="$TMP_DIR/app.json"
+  local PROBE_FILE="$TMP_DIR/probe.json"
+  local DEPLOYMENT_TMP_FILE="$TMP_DIR/deployment.json"
+  trap 'rm -rf "$TMP_DIR" > /dev/null' RETURN INT TERM EXIT
+
+  copy_from_image "$IMAGE" "app.json" "$APP_JSON_TMPL" 2>/dev/null || true
+
+  if [[ ! -f "$APP_JSON_TMPL" ]]; then
+    return 0
+  fi
+
+  # We use sigil templating to allow the health check configurations to refer
+  # to the app name with the variable $APP.
+  local SIGIL_PARAMS=(APP="$APP")
+  sigil -f "$APP_JSON_TMPL" "${SIGIL_PARAMS[@]}" | cat -s >$APP_JSON_FILE
+
+  for PROBE_TYPE in liveness readiness; do
+    if jq -e -M ".healthchecks.\"$PROC_TYPE\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE" \
+      || jq -e -M ".healthchecks.\"*\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE"; then
+      jq -M --argjson data "$(cat "$PROBE_FILE")" ".spec.template.spec.containers[0].${PROBE_TYPE}Probe += \$data" <"$DEPLOYMENT_FILE" >"$DEPLOYMENT_TMP_FILE"
+      mv "$DEPLOYMENT_TMP_FILE" "$DEPLOYMENT_FILE"
+    fi
+  done
+}
+
+fn-set-image-pull-secrets() {
+  declare IMAGE_PULL_SECRETS="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  if [[ -n "$IMAGE_PULL_SECRETS" ]]; then
+    IMAGE_PULL_SECRETS="$IMAGE_PULL_SECRETS" jq -M ".spec.template.spec.imagePullSecrets[0].name = env.IMAGE_PULL_SECRETS" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+}
+
+fn-set-pod-annotations() {
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  ANNOTATION_COUNT="$(fn-plugin-property-list-length "scheduler-kubernetes" "$APP" "pod-annotations")"
+  if [[ "$ANNOTATION_COUNT" == 0 ]]; then
+    return
+  fi
+
+  jq -M --argjson data "{}" '.spec.template.metadata.annotations += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+
+  while IFS="" read -r p || [ -n "$p" ]; do
+    local KEY="$(echo "$p" | cut -d' ' -f1)"
+    local VALUE="$(echo "$p" | cut -d' ' -f2)"
+    KEY="$KEY" VALUE="$VALUE" jq -M '.spec.template.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  done < <(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "pod-annotations")
+}
+
+fn-set-ports() {
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  if is_image_herokuish_based "$IMAGE"; then
+    jq -M --argjson data "[{\"name\": \"PORT\", \"value\": \"5000\"}]" '.spec.template.spec.containers[0].env += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+}
+
+fn-set-resource-constraints() {
+  declare APP="$1" PROC_TYPE="$2" DEPLOYMENT_FILE="$3"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  RESOURCE_LIMITS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "cpu" 2>/dev/null || true)
+  RESOURCE_LIMITS_NVIDIA_GPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "nvidia-gpu" 2>/dev/null || true)
+  RESOURCE_LIMITS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "limit" "memory" 2>/dev/null || true)
+  RESOURCE_REQUESTS_CPU=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "reserve" "cpu" 2>/dev/null || true)
+  RESOURCE_REQUESTS_MEMORY=$(plugn trigger resource-get-property "$APP" "$PROC_TYPE" "reserve" "memory" 2>/dev/null || true)
+
+  if [[ -n "$RESOURCE_LIMITS_CPU" ]]; then
+    RESOURCE_LIMITS_CPU="$RESOURCE_LIMITS_CPU" jq -M ".spec.template.spec.containers[0].resources.limits.cpu = env.RESOURCE_LIMITS_CPU" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+
+  if [[ -n "$RESOURCE_LIMITS_NVIDIA_GPU" ]]; then
+    RESOURCE_LIMITS_NVIDIA_GPU="$RESOURCE_LIMITS_NVIDIA_GPU" jq -M '.spec.template.spec.containers[0].resources.limits.["nvidia.com/gpu"] = env.RESOURCE_LIMITS_NVIDIA_GPU' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+
+  if [[ -n "$RESOURCE_LIMITS_MEMORY" ]]; then
+    RESOURCE_LIMITS_MEMORY="$RESOURCE_LIMITS_MEMORY" jq -M ".spec.template.spec.containers[0].resources.limits.memory = env.RESOURCE_LIMITS_MEMORY" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+
+  if [[ -n "$RESOURCE_REQUESTS_CPU" ]]; then
+    RESOURCE_REQUESTS_CPU="$RESOURCE_REQUESTS_CPU" jq -M ".spec.template.spec.containers[0].resources.requests.cpu = env.RESOURCE_REQUESTS_CPU" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+
+  if [[ -n "$RESOURCE_REQUESTS_MEMORY" ]]; then
+    RESOURCE_REQUESTS_MEMORY="$RESOURCE_REQUESTS_MEMORY" jq -M ".spec.template.spec.containers[0].resources.requests.memory = env.RESOURCE_REQUESTS_MEMORY" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  fi
+}
+
+fn-set-service-annotations() {
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  ANNOTATION_COUNT="$(fn-plugin-property-list-length "scheduler-kubernetes" "$APP" "service-annotations")"
+  if [[ "$ANNOTATION_COUNT" == 0 ]]; then
+    return
+  fi
+
+  jq -M --argjson data "{}" '.metadata.annotations += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+
+  while IFS="" read -r p || [ -n "$p" ]; do
+    local KEY="$(echo "$p" | cut -d' ' -f1)"
+    local VALUE="$(echo "$p" | cut -d' ' -f2)"
+    KEY="$KEY" VALUE="$VALUE" jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  done < <(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "service-annotations")
+}
+
+fn-strip-ports() {
+  declare DEPLOYMENT_FILE="$1"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+
+  jq -M 'del(.spec.template.spec.containers[0].ports)' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+}
