@@ -15,7 +15,7 @@ cmd-scheduler-kubernetes-show-manifest() {
 
   verify_app_name "$APP"
   local DOKKU_SCHEDULER=$(get_app_scheduler "$APP")
-  [[ "$DOKKU_SCHEDULER" != "kubernetes" ]] || dokku_log_fail "Scheduler for $APP is set to $DOKKU_SCHEDULER"
+  [[ "$DOKKU_SCHEDULER" != "kubernetes" ]] && dokku_log_fail "Scheduler for $APP is set to $DOKKU_SCHEDULER"
 
   local DEPLOYMENT_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/deployment.json.sigil"
   local SERVICE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/service.json.sigil"
