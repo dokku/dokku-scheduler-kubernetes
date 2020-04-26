@@ -2,7 +2,7 @@
   "apiVersion": "policy/v1beta1",
   "kind": "PodDisruptionBudget",
   "metadata": {
-    "name": "{{ $.APP }}-pdb",
+    "name": "{{ $.APP }}",
     "labels": {
       "app": "{{ $.APP }}"
     }
