@@ -78,6 +78,7 @@ dokku config:set APP DOKKU_APP_PROXY_TYPE=nginx-ingress
 
 The ingress object has the following properties:
 
+- The name of the ingress object will be `app-ingress`.
 - All kubernetes-deployed apps within the same namespace are added to the ingress object.
 - Configured app domains are respected as unique rules.
 - The configured service port for each rule is hardcoded to `5000`.
