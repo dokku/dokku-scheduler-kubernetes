@@ -98,7 +98,7 @@ dokku scheduler-kubernetes:set APP imagePullSecrets registry-credential
 
 ### Service Ingress
 
-> This functionality requires a helm-installed `nginx-ingress` controller:
+> This functionality assumes a helm-installed `nginx-ingress` controller:
 >
 > ```shell
 > helm install nginx-ingress stable/nginx-ingress --set controller.publishService.enabled=true
