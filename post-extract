@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+scheduler-kubernetes-post-extract() {
+  declare desc="scheduler-kubernetes post-create plugin trigger"
+  declare trigger="scheduler-kubernetes-post-create"
+  declare APP="$1" TMP_WORK_DIR="$2" REV="$3"
+
+  pushd "$TMP_WORK_DIR" >/dev/null
+  for process_type in $(procfile-util list); do
+    if echo "$process_type" | grep -vqE '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'; then
+      dokku_log_fail "Invalid process type name specified for kubernetes deploy ($process_type)"
+    fi
+  done
+  popd >/dev/null
+}
+
+scheduler-kubernetes-post-extract "$@"
