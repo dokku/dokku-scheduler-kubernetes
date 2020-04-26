@@ -4,8 +4,8 @@ set -eo pipefail
 source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 
 scheduler-kubernetes-post-extract() {
-  declare desc="scheduler-kubernetes post-create plugin trigger"
-  declare trigger="scheduler-kubernetes-post-create"
+  declare desc="scheduler-kubernetes post-extract plugin trigger"
+  declare trigger="scheduler-kubernetes-post-extract"
   declare APP="$1" TMP_WORK_DIR="$2" REV="$3"
 
   pushd "$TMP_WORK_DIR" >/dev/null
