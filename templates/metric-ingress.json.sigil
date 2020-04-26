@@ -1,0 +1,12 @@
+{
+  "type": "Object",
+  "object": {
+    "metricName": "{{ $.TARGET_NAME }}",
+    "target": {
+      "apiVersion": "extensions/v1beta1",
+      "kind": "Ingress",
+      "name": "{{ $.INGRESS_NAME }}",
+    },
+    "targetValue": "{{ $.TARGET_VALUE }}"
+  }
+}

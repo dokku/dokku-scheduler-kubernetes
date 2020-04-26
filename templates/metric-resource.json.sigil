@@ -1,0 +1,7 @@
+{
+  "type": "Resource",
+  "resource": {
+    "name": "{{ $.TARGET_NAME }}",
+    "{{ $.TARGET_TYPE }}": {{ $.TARGET_VALUE }}
+  }
+}
