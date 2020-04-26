@@ -9,12 +9,12 @@ cmd-scheduler-kubernetes-set() {
   declare cmd="scheduler-kubernetes:set" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare APP="$1" KEY="$2" VALUE="$3"
-  local VALID_KEYS=("imagePullSecrets" "namespace")
+  local VALID_KEYS=("imagePullSecrets" "ingress-enabled" "namespace")
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
   [[ -z "$KEY" ]] && dokku_log_fail "No key specified"
 
   if ! fn-in-array "$KEY" "${VALID_KEYS[@]}"; then
-    dokku_log_fail "Invalid key specified, valid keys include: imagePullSecrets, namespace"
+    dokku_log_fail "Invalid key specified, valid keys include: imagePullSecrets, ingress-enabled, namespace"
   fi
 
   if [[ -n "$VALUE" ]]; then

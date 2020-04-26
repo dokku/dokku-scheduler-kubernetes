@@ -1,0 +1,13 @@
+{
+  "host": "{{ $.DOMAIN }}",
+  "http": {
+    "paths": [
+      {
+        "backend": {
+          "serviceName": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
+          "servicePort": {{ $.PORT }}
+        }
+      }
+    ]
+  }
+}

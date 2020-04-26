@@ -75,6 +75,7 @@ cmd-scheduler-kubernetes-report-single() {
   local flag_map=(
     "--scheduler-kubernetes-namespace: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
     "--scheduler-kubernetes-imagePullSecrets: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "imagePullSecrets" "")"
+    "--scheduler-kubernetes-ingress-enabled: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "ingress-enabled" "false")"
   )
 
   if [[ -z "$INFO_FLAG" ]]; then
@@ -134,6 +135,82 @@ help_desc
   fi
 }
 
+fn-scheduler-kubernetes-add-rule() {
+  declare APP="$1" PROC_TYPE="$2" PORT="$3" DOMAIN="$4" INGRESS_FILE="$5"
+  local RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/rule.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  local SIGIL_PARAMS=(APP="$APP" PROCESS_TYPE="$PROC_TYPE" PORT="$PORT" DOMAIN="$DOMAIN")
+  jq --argjson rule "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.rules += [$rule]' <"$INGRESS_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$INGRESS_FILE"
+}
+
+fn-scheduler-kubernetes-ingress-build-config() {
+  declare desc="scheduler-kubernetes ingress-build-config"
+  declare APP="$1"
+
+  if [[ "$(plugn trigger proxy-type "$APP")" != "nginx-ingress" ]]; then
+    return
+  fi
+
+  local HAS_RULE=false
+  local APP_NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
+  local INGRESS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  local SIGIL_PARAMS=()
+  sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+
+  for app in $(dokku_apps); do
+    local DOKKU_SCALE_FILE="$DOKKU_ROOT/$app/DOKKU_SCALE"
+    local DOKKU_VHOST_FILE="$DOKKU_ROOT/$app/VHOST"
+    local namespace="$(fn-plugin-property-get "scheduler-kubernetes" "$app" "namespace" "")"
+
+    if [[ "$APP_NAMESPACE" != "$namespace" ]]; then
+      continue
+    fi
+
+    if [[ ! -f "$DOKKU_SCALE_FILE" ]] || [[ ! -f "$DOKKU_VHOST_FILE" ]]; then
+      continue
+    fi
+
+    if [[ "$(plugn trigger proxy-type "$app")" != "nginx-ingress" ]]; then
+      continue
+    fi
+
+    while read -r line || [[ -n "$line" ]]; do
+      [[ "$line" =~ ^#.* ]] && continue
+      line="$(strip_inline_comments "$line")"
+      PROC_TYPE=${line%%=*}
+      PROC_COUNT=${line#*=}
+
+      if [[ "$PROC_TYPE" != "web" ]]; then
+        continue
+      fi
+
+      while read -r DOMAIN || [[ -n "$DOMAIN" ]]; do
+        HAS_RULE=true
+        fn-scheduler-kubernetes-add-rule "$app" "$PROC_TYPE" "5000" "$DOMAIN" "$TMP_FILE"
+      done <"$DOKKU_VHOST_FILE"
+    done <"$DOKKU_SCALE_FILE"
+  done
+
+  if [[ "$HAS_RULE" == "false" ]]; then
+    return
+  fi
+
+  local KUBE_ARGS=()
+  if [[ -n "$APP_NAMESPACE" ]]; then
+    KUBE_ARGS+=("--namespace=$APP_NAMESPACE")
+    fn-scheduler-kubernetes-ensure-namespace "$APP_NAMESPACE" >/dev/null
+  fi
+
+  plugn trigger pre-kubernetes-ingress-apply "$APP" "$TMP_FILE"
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
+}
+
 fn-scheduler-kubernetes-ensure-namespace() {
   declare NAMESPACE="$1"
   local NAMESPACE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/namespace.json.sigil"
@@ -170,6 +247,7 @@ fn-set-deployment-annotations() {
 fn-set-env-vars() {
   declare APP="$1" DEPLOYMENT_FILE="$2"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   jq -M --argjson data "$(config_export app "$APP" --format json-list --merged)" '.spec.template.spec.containers[0].env += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"

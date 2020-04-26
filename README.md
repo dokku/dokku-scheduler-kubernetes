@@ -62,6 +62,28 @@ dokku scheduler-kubernetes:set APP imagePullSecrets registry-credential
 
 > See [this doc](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) for more details on creating an `imagePullSecrets` secret file.
 
+### Service Ingress
+
+> This functionality requires a helm-installed `nginx-ingress` controller:
+>
+> ```shell
+> helm install nginx-ingress stable/nginx-ingress --set controller.publishService.enabled=true
+> ```
+
+A Kubernetes service object is created for each `web` process. Additionally, if the app has it's `proxy-type` set to `nginx-ingress`, then we will also create or update a Kubernetes ingress object within the namespace configured for the app. This can be set as follows:
+
+```shell
+dokku config:set APP DOKKU_APP_PROXY_TYPE=nginx-ingress
+```
+
+The ingress object has the following properties:
+
+- All kubernetes-deployed apps within the same namespace are added to the ingress object.
+- Configured app domains are respected as unique rules.
+- The configured service port for each rule is hardcoded to `5000`.
+
+To modify the manifest before it gets applied to the cluster, use the `pre-kubernetes-ingress-apply` plugin trigger.
+
 ### Kubernetes Manifests
 
 > Warning: Running this command exposes app environment variables to stdout.
@@ -223,9 +245,24 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 # TODO
 ```
 
+### `pre-ingress-kubernetes-apply`
+
+- Description: Allows a user to interact with the `ingress` manifest before it has been submitted.
+- Invoked by: `core-post-deploy`, `post-domains-update`, `post-proxy-ports-update`, and `proxy-build-config` triggers
+- Arguments: `$APP` `$MANIFEST_FILE`
+- Example:
+
+```shell
+#!/usr/bin/env bash
+
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+
+# TODO
+```
+
 ### `pre-deploy-kubernetes-apply`
 
-- Description: Allows a user to interact with the `deployment|service` manifest after it has been submitted.
+- Description: Allows a user to interact with the `deployment|service` manifest before it has been submitted.
 - Invoked by: `scheduler-deploy` trigger and `scheduler-kubernetes:show-manifest`
 - Arguments: `$APP` `$PROC_TYPE` `$MANIFEST_FILE` `MANIFEST_TYPE`
 - Example:
@@ -248,5 +285,4 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 - Environment variables are set plaintext in the deployment object.
 - Resource limits and requests are supported from the `resource` plugin (Kubernetes requests are Dokku reservations).
 - The Dokku commands `run`, `enter`, and `logs:failed` are not supported.
-- A custom nginx configuration - or a different proxy plugin implementation - will be needed in order to talk to the Kubernetes `Service` upstream.
 - Custom docker-options are not supported.
