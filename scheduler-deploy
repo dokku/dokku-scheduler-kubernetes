@@ -27,6 +27,8 @@ scheduler-kubernetes-scheduler-deploy() {
   IMAGE=$(get_deploying_app_image_name "$APP" "$IMAGE_TAG")
   plugn trigger pre-deploy "$APP" "$IMAGE_TAG"
 
+  fn-set-pod-disruption-constraints "$APP"
+
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
   export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
   KUBE_ARGS=()

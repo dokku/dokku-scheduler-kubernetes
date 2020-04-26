@@ -84,6 +84,17 @@ The ingress object has the following properties:
 
 To modify the manifest before it gets applied to the cluster, use the `pre-kubernetes-ingress-apply` plugin trigger.
 
+### Pod Disruption Budgets
+
+A PodDisruptionBudget object can be created, and will apply to all process types in an app. To configure this, the `pod-max-unavailable` and `pod-min-available` properties can be set:
+
+```shell
+dokku scheduler-kubernetes:set APP pod-min-available 1
+
+# available in kubernetes 1.7+
+dokku scheduler-kubernetes:set APP pod-max-unavailable 1
+```
+
 ### Kubernetes Manifests
 
 > Warning: Running this command exposes app environment variables to stdout.

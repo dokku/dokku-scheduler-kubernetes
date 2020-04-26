@@ -1,0 +1,17 @@
+{
+  "apiVersion": "policy/v1beta1",
+  "kind": "PodDisruptionBudget",
+  "metadata": {
+    "name": "{{ $.APP }}-pdb",
+    "labels": {
+      "app": "{{ $.APP }}"
+    }
+  },
+  "spec": {
+    "selector": {
+      "matchLabels": {
+        "app": "{{ $.APP }}"
+      }
+    }
+  }
+}
