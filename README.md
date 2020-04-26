@@ -22,6 +22,39 @@ After the plugin has successfully been installed you need to install the plugin'
 dokku plugin:install-dependencies
 ```
 
+## Functionality
+
+The following functionality has been implemented
+
+- Domain proxy support via the Nginx Ingress Controller
+- Zero-downtime deploys via Deployment healthchecks
+- Pod Disruption Budgets
+- Deployment and Service annotations
+- Environment variables
+- Resource limits and reservations (reservations == kubernetes requests)
+
+Unsupported at this time:
+
+- Autoscaling management
+- Custom docker-options (not applicable)
+- Deployment timeouts
+- Dockerfile support
+- Encrypted environment variables (unimplemented, requires kubernetes secrets)
+- Proxy port integration
+- SSL Certificates
+- The following scheduler commands are unimplemented:
+  - `enter`
+  - `logs:failed`
+  - `run`
+- Traffic to non-web containers (requires service object creation)
+
+### Notes
+
+- Each `Procfile` entry will be turned into a kubernetes `Deployment` object.
+- The `web` process will also create a `Service` object.
+- All created Kubernetes objects are tracked to completion via `kubedog`.
+- All manifest templates are hardcoded in the plugin.
+
 ## Usage
 
 Set the scheduler to `kubernetes`. This can be done per-app or globally:
@@ -288,15 +321,3 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
 # TODO
 ```
-
-## Notes
-
-- Dockerfile deploys are not currently supported.
-- Each `Procfile` entry will be turned into a kubernetes `Deployment` object.
-- The `web` process will also create a `Service` object.
-- All created Kubernetes objects are tracked to completion via `kubedog`.
-- Templates for `Deployment` and `Service` objects are hardcoded in the plugin.
-- Environment variables are set plaintext in the deployment object.
-- Resource limits and requests are supported from the `resource` plugin (Kubernetes requests are Dokku reservations).
-- The Dokku commands `run`, `enter`, and `logs:failed` are not supported.
-- Custom docker-options are not supported.
