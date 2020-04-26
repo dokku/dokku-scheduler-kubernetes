@@ -51,6 +51,7 @@ Unsupported at this time:
 ### Notes
 
 - Each `Procfile` entry will be turned into a kubernetes `Deployment` object.
+- Each `Procfile` entry name _must_ be a valid DNS subdomain.
 - The `web` process will also create a `Service` object.
 - All created Kubernetes objects are tracked to completion via `kubedog`.
 - All manifest templates are hardcoded in the plugin.
