@@ -96,6 +96,8 @@ dokku scheduler-kubernetes:set APP pod-min-available 1
 dokku scheduler-kubernetes:set APP pod-max-unavailable 1
 ```
 
+Pod Disruption Budgets will be updated on next deploy.
+
 ### Kubernetes Manifests
 
 > Warning: Running this command exposes app environment variables to stdout.
