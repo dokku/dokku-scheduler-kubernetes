@@ -71,5 +71,4 @@ cmd-scheduler-kubernetes-show-manifest() {
   fi
 }
 
-
 cmd-scheduler-kubernetes-show-manifest "$@"
