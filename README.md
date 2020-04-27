@@ -26,12 +26,13 @@ dokku plugin:install-dependencies
 
 The following functionality has been implemented
 
-- Domain proxy support via the Nginx Ingress Controller
-- Zero-downtime deploys via Deployment healthchecks
-- Pod Disruption Budgets
 - Deployment and Service annotations
+- Domain proxy support via the Nginx Ingress Controller
 - Environment variables
+- Letsencrypt SSL Certificate integration via CertManager
+- Pod Disruption Budgets
 - Resource limits and reservations (reservations == kubernetes requests)
+- Zero-downtime deploys via Deployment healthchecks
 
 Unsupported at this time:
 
@@ -41,7 +42,7 @@ Unsupported at this time:
 - Dockerfile support
 - Encrypted environment variables (unimplemented, requires kubernetes secrets)
 - Proxy port integration
-- SSL Certificates
+- Manual SSL Certificates
 - The following scheduler commands are unimplemented:
   - `enter`
   - `logs:failed`
@@ -118,6 +119,33 @@ The ingress object has the following properties:
 - The configured service port for each rule is hardcoded to `5000`.
 
 To modify the manifest before it gets applied to the cluster, use the `pre-kubernetes-ingress-apply` plugin trigger.
+
+#### Automated SSL Integration via CertManager
+
+> This functionality assumes a helm-installed `cert-manager` CRD:
+>
+> ```shell
+> kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml
+> kubectl create namespace cert-manager
+> helm repo add jetstack https://charts.jetstack.io
+> helm install cert-manager --version v0.14.1 --namespace cert-manager jetstack/cert-manager
+> ```
+
+At this time, the `scheduler-kubernetes` does not have support for custom SSL certificates. However, domains associated with an app can have a Letsencrypt SSL certificate provisioned automatically via the [CertManager](https://github.com/jetstack/cert-manager) Kubernetes add-on.
+
+To start using the CertManager, we'll first need to set the issuer email
+
+```shell
+dokku config:set --global CERT_MANAGER_EMAIL=your@email.tld
+```
+
+Next, any apps that will require cert-manager integration will need to have that enabled:
+
+```shell
+dokku scheduler-kubernetes:set APP cert-manager-enabled true
+```
+
+On the next deploy or domain name change, the CertManager entry will be automatically updated to fetch an SSL certificate for all domains associated with all applications on the same ingress object.
 
 ### Pod Disruption Budgets
 

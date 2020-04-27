@@ -1,0 +1,25 @@
+{
+  "apiVersion": "cert-manager.io/v1alpha2",
+  "kind": "ClusterIssuer",
+  "metadata": {
+    "name": "letsencrypt-prod"
+  },
+  "spec": {
+    "acme": {
+      "email": "{{ $.CERT_MANAGER_EMAIL }}",
+      "server": "https://acme-v02.api.letsencrypt.org/directory",
+      "privateKeySecretRef": {
+        "name": "letsencrypt-prod-private-key"
+      },
+      "solvers": [
+        {
+          "http01": {
+            "ingress": {
+              "class": "nginx"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

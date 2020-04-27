@@ -1,0 +1,6 @@
+[
+  {
+    "hosts": [],
+    "secretName": "app-ingress-tls"
+  }
+]

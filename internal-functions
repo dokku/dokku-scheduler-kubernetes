@@ -74,6 +74,7 @@ cmd-scheduler-kubernetes-report-single() {
   fi
   verify_app_name "$APP"
   local flag_map=(
+    "--scheduler-kubernetes-cert-manager-enabled: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "pod-min-available" "")"
     "--scheduler-kubernetes-imagePullSecrets: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "imagePullSecrets" "")"
     "--scheduler-kubernetes-ingress-enabled: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "ingress-enabled" "false")"
     "--scheduler-kubernetes-namespace: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
@@ -149,6 +150,24 @@ fn-scheduler-kubernetes-add-rule() {
   mv "$TMP_FILE" "$INGRESS_FILE"
 }
 
+fn-scheduler-kubernetes-add-cert-manager() {
+  declare INGRESS_FILE="$1" CERT_MANAGER_DOMAINS="${@:2}"
+  local CERT_MANAGER_TLS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/cert-manager-tls.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  jq --argjson tls "$(sigil -f "$CERT_MANAGER_TLS_TEMPLATE")" '.spec.tls += $tls' <"$INGRESS_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$INGRESS_FILE"
+
+  for domain in ${CERT_MANAGER_DOMAINS[*]}; do
+    DOMAIN="$domain" jq '.spec.tls[0].hosts += [env.DOMAIN]' <"$INGRESS_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$INGRESS_FILE"
+  done
+
+  jq -M '.metadata.annotations["cert-manager.io/cluster-issuer"] = "letsencrypt-prod"' <"$INGRESS_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$INGRESS_FILE"
+}
+
 fn-scheduler-kubernetes-ingress-build-config() {
   declare desc="scheduler-kubernetes ingress-build-config"
   declare APP="$1"
@@ -166,10 +185,20 @@ fn-scheduler-kubernetes-ingress-build-config() {
     domains_setup "$APP"
   fi
 
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  local CERT_MANAGER_EMAIL="$(config_get --global CERT_MANAGER_EMAIL || true)"
+  local CERT_MANAGER_DOMAINS=()
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  if [[ -n "$CERT_MANAGER_EMAIL" ]]; then
+    local CERTIFICATE_ISSUER_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/certificate-issuer.json.sigil"
+    local SIGIL_PARAMS=(CERT_MANAGER_EMAIL="$CERT_MANAGER_EMAIL")
+    sigil -f "$CERTIFICATE_ISSUER_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
+  fi
+
   local HAS_RULE=false
   local APP_NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   local INGRESS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress.json.sigil"
-  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   local SIGIL_PARAMS=()
@@ -179,6 +208,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
     local DOKKU_SCALE_FILE="$DOKKU_ROOT/$app/DOKKU_SCALE"
     local DOKKU_VHOST_FILE="$DOKKU_ROOT/$app/VHOST"
     local namespace="$(fn-plugin-property-get "scheduler-kubernetes" "$app" "namespace" "")"
+    local cert_manager_enabled="$(fn-plugin-property-get "scheduler-kubernetes" "$app" "cert-manager-enabled" "")"
 
     if [[ "$APP_NAMESPACE" != "$namespace" ]]; then
       continue
@@ -207,6 +237,10 @@ fn-scheduler-kubernetes-ingress-build-config() {
       fi
 
       while read -r DOMAIN || [[ -n "$DOMAIN" ]]; do
+        if [[ "$cert_manager_enabled" == "true" ]]; then
+          CERT_MANAGER_DOMAINS+=("$DOMAIN")
+        fi
+
         HAS_RULE=true
         fn-scheduler-kubernetes-add-rule "$app" "$PROC_TYPE" "5000" "$DOMAIN" "$TMP_FILE"
       done <"$DOKKU_VHOST_FILE"
@@ -223,10 +257,15 @@ fn-scheduler-kubernetes-ingress-build-config() {
     fn-scheduler-kubernetes-ensure-namespace "$APP_NAMESPACE" >/dev/null
   fi
 
+  local SCHEME=http
+  if [[ -n "$CERT_MANAGER_EMAIL" ]] && [[ -n "$CERT_MANAGER_DOMAINS" ]]; then
+    local SCHEME=https
+    fn-scheduler-kubernetes-add-cert-manager "$TMP_FILE" "${CERT_MANAGER_DOMAINS[@]}"
+  fi
+
   plugn trigger pre-kubernetes-ingress-apply "$APP" "$TMP_FILE"
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
 
-  local SCHEME=http
   local URLS_PATH="$DOKKU_ROOT/$APP/URLS"
   local NONSSL_VHOSTS=$(get_app_domains "$APP")
   if [[ -n "$NONSSL_VHOSTS" ]]; then
