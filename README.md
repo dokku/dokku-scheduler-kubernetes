@@ -82,7 +82,7 @@ dokku registry:set APP server gcr.io/dokku/
 
 Assuming your Dokku installation can push to the registry and your kubeconfig is valid, Dokku will deploy the app against the cluster.
 
-The namespace in use for a particular app can be customized using the `scheduler-kubernetes:set` command. This will apply to all future invocations of the plugin, and will not modify any existing resources. The `scheduler-kubernetes` will create the namespace via a `kubectl apply`.
+The namespace in use for a particular app can be customized using the `:set` command. This will apply to all future invocations of the plugin, and will not modify any existing resources. The `scheduler-kubernetes` will create the namespace via a `kubectl apply`.
 
 ```shell
 dokku scheduler-kubernetes:set APP namespace test
@@ -215,7 +215,7 @@ dokku scheduler-kubernetes:autoscale-rule-remove APP PROC_TYPE --target-name cpu
 
 > Warning: Running this command exposes app environment variables to stdout.
 
-The kubernetes manifest for a deployment or service can be displayed using the `scheduler-kubernetes:show-manifest` command. This manifest can be used to inspect what would be submitted to Kubernetes.
+The kubernetes manifest for a deployment or service can be displayed using the `:show-manifest` command. This manifest can be used to inspect what would be submitted to Kubernetes.
 
 ```shell
 # show the deployment manifest for the `web` process type
@@ -244,7 +244,7 @@ The command will exit non-zero if the specific manifest for the given app/proces
 
 #### Deployment Annotations
 
-These can be managed by the `scheduler-kubernetes:deployment-annotations-set` command.
+These can be managed by the `:deployment-annotations-set` command.
 
 ```shell
 # command structure
@@ -261,7 +261,7 @@ Currently, these apply globally to all processes within a deployed app.
 
 #### Pod Annotations
 
-These can be managed by the `scheduler-kubernetes:pod-annotations-set` command.
+These can be managed by the `:pod-annotations-set` command.
 
 ```shell
 # command structure
@@ -278,7 +278,7 @@ Currently, these apply globally to all processes within a deployed app.
 
 #### Service Annotations
 
-These can be managed by the `scheduler-kubernetes:service-annotations-set` command.
+These can be managed by the `:service-annotations-set` command.
 
 ```shell
 # command structure
@@ -295,7 +295,7 @@ Currently, they are applied to the `web` process, which is the only process for 
 
 ### Rolling Updates
 
-For deployments that use a `rollingUpdate` for rollouts, a `rollingUpdate` may be triggered at a later date via the `scheduler-kubernetes:rolling-update` command.
+For deployments that use a `rollingUpdate` for rollouts, a `rollingUpdate` may be triggered at a later date via the `:rolling-update` command.
 
 ```shell
 dokku scheduler-kubernetes:rolling-update APP
@@ -390,7 +390,7 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 ### `pre-deploy-kubernetes-apply`
 
 - Description: Allows a user to interact with the `deployment|service` manifest before it has been submitted.
-- Invoked by: `scheduler-deploy` trigger and `scheduler-kubernetes:show-manifest`
+- Invoked by: `scheduler-deploy` trigger and `:show-manifest`
 - Arguments: `$APP` `$PROC_TYPE` `$MANIFEST_FILE` `MANIFEST_TYPE`
 - Example:
 
