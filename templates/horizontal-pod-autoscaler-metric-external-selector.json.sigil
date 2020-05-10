@@ -2,7 +2,8 @@
   "type": "External",
   "external": {
     "metric": {
-      "name": "{{ $.TARGET_NAME }}"
+      "name": "{{ $.TARGET_NAME }}",
+      "selector": "{{ $.TARGET_EXTRA }}"
     },
     "target": {
       "type": "{{ $.TARGET_TYPE }}",
