@@ -161,7 +161,7 @@ Pod Disruption Budgets will be updated on next deploy.
 
 ### Deployment Autoscaling
 
-> This feature requires an installed metric server, uses the `autoscaling/v2beta2` api, and will apply immediately.
+> This feature requires an installed metric server, uses the `autoscaling/v2beta2` api, and will apply immediately. Only `resource` rules are supported when using the official metric-server, all others require the prometheus-operator and prometheus-adapter.
 
 By default, Kubernetes deployments are not set to autoscale, but a HorizontalPodAutoscaler object can be managed for an app on a per-process type basis. At a minimum, both a min/max number of replicas must be set.
 
@@ -175,27 +175,38 @@ dokku scheduler-kubernetes:autoscale-set APP PROC_TYPE max-replicas 10
 
 You also need to add autoscaling rules. These can be managed via the `:autoscale-rule-add` command. Adding a rule for a target-name/metric-type combination that already exists will override the existing rule with a warning message on stderr.
 
-Rules can be added for the following metric types (specified by the `--metric-type` flag):
+Rules can be added for the following metric types:
 
-- `ingress`: A rule that allows autoscaling based on ingress metrics.
-  - options:
-    - `--ingress-name` (default: `app-ingress`): The name of the ingress resource to track.
-    - `--target-name` (required: true): The name of the metric from the ingress resource to track.
-    - `--target-value` (required: true): The value to track.
-- `pod`
-  - options:
-    - `--target-name` (required: true): The name of the metric from the pod resource to track.
-    - `--target-type` (default: `targetAverageUtilization`, options: `[targetAverageUtilization, targetAverageValue]`): The type of the target.
-    - `--target-value`: The value to track.
+- `external`:
+  - format: `external:$NAME:$TYPE:$VALUE[:$SELECTOR]`
+  - fields:
+    - `$NAME`: The name of the external metric to track
+    - `$TYPE` (valid values: `[AverageValue, Value]`): The type of the target.
+    - `$VALUE`: The value to track.
+    - `$SELECTOR` (optional): The selector to use for filtering to one or more specific metric series.
+- `ingress`:
+  - format: `ingress:$NAME:$TYPE:$VALUE[:$INGRESS]`
+  - fields:
+    - `$NAME`: The name of the ingress metric to track.
+    - `$TYPE` (valid values: `[AverageValue, Value]`): The type of the target.
+    - `$VALUE`: The value to track.
+    - `$INGRESS` (default: `app-ingress`): The name of the ingress object to filter on.
+- `pods`
+  - format: `pods:$NAME:$TYPE:$VALUE`
+  - fields:
+    - `$NAME`: The name of the metric from the pod resource to track.
+    - `$TYPE` (valid values: `[AverageValue]`): The type of the target.
+    - `$VALUE`: The value to track.
 - `resource`
-  - options:
-    - `--target-name` (options: `[cpu, memory]`, required: true): The name of the metric to track. 
-    - `--target-type` (default: `targetAverageUtilization`, options: `[targetAverageUtilization, targetAverageValue]`): The type of the target.
-    - `--target-value` (required: true): The value to track.
+  - format: `resource:$NAME:$TYPE:$VALUE`
+  - fields:
+    - `$NAME` (valid values: `[cpu, memory]`): The name of the metric to track. 
+    - `$TYPE` (valid values: `[AverageValue, Utilization]`): The type of the target.
+    - `$VALUE`: The value to track.
 
 ```shell
 # set the cpu average utilization target
-dokku scheduler-kubernetes:autoscale-rule-add APP PROC_TYPE --target-name cpu --target-value 50 --target-type targetAverageUtilization --metric-type resource
+dokku scheduler-kubernetes:autoscale-rule-add APP PROC_TYPE resource:cpu:Utilization:50
 ```
 
 Rules can be listed via the `autoscale-rule-list` command:
@@ -204,11 +215,20 @@ Rules can be listed via the `autoscale-rule-list` command:
 dokku scheduler-kubernetes:autoscale-rule-list APP PROC_TYPE
 ```
 
-And finally, rules can be removed via the `:autoscale-rule-remove` command. Note that this command takes the same flags as the `autoscale-rule-add` command. If a rule matching the specified flags does not exist, the command will still return 0.
+Rules can be removed via the `:autoscale-rule-remove` command. This command takes the same arguments as the `autoscale-rule-add` command, though the value is optional. If a rule matching the specified arguments does not exist, the command will still return 0.
 
 ```shell
 # remove the cpu rule
-dokku scheduler-kubernetes:autoscale-rule-remove APP PROC_TYPE --target-name cpu --target-value 50 --target-type targetAverageUtilization --metric-type resource
+dokku scheduler-kubernetes:autoscale-rule-remove APP PROC_TYPE resource:cpu:Utilization:50
+
+# remove the cpu rule by prefix
+dokku scheduler-kubernetes:autoscale-rule-remove APP PROC_TYPE resource:cpu:Utilization
+```
+
+Autoscaling rules are applied automatically during the next deploy, though may be immediately applied through the `:autoscale-rule-apply` command:
+
+```shell
+dokku scheduler-kubernetes:autoscale-rule-apply APP PROC_TYPE
 ```
 
 ### Kubernetes Manifests
