@@ -197,7 +197,36 @@ fn-scheduler-kubernetes-autoscale-apply() {
   local SIGIL_PARAMS=(APP="$APP" MAX_REPLICAS="$MAX_REPLICAS" MIN_REPLICAS="$MIN_REPLICAS" PROCESS_TYPE="$PROC_TYPE")
   sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
 
+  for RULE in ${RULES[@]}; do
+    fn-scheduler-kubernetes-autoscale-add-hpa-rule "$RULE" "$TMP_FILE"
+  done
+
   cat "$TMP_FILE"
+}
+
+fn-scheduler-kubernetes-autoscale-add-hpa-rule() {
+  declare RULE="$1" HPA_FILE="$2"
+  local METRIC_TYPE="$(echo "$RULE" | cut -d':' -f1)"
+  local TARGET_NAME="$(echo "$RULE" | cut -d':' -f2)"
+  local TARGET_TYPE="$(echo "$RULE" | cut -d':' -f3)"
+  local TARGET_VALUE="$(echo "$RULE" | cut -d':' -f4)"
+  local TARGET_EXTRA="$(echo "$RULE" | cut -d':' -f5)"
+
+  local RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/horizontal-pod-autoscaler-metric-${METRIC_TYPE}.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  if [[ "$METRIC_TYPE" == "external" ]] && [[ -n "$TARGET_EXTRA" ]]; then
+    RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/horizontal-pod-autoscaler-metric-${METRIC_TYPE}-selector.json.sigil"
+  fi
+
+  if [[ "$METRIC_TYPE" == "ingress" ]] && [[ -z "$TARGET_EXTRA" ]]; then
+    TARGET_EXTRA="app-ingress"
+  fi
+
+  local SIGIL_PARAMS=(METRIC_TYPE="$METRIC_TYPE" TARGET_NAME="$TARGET_NAME" TARGET_TYPE="$TARGET_TYPE" TARGET_VALUE="$TARGET_VALUE" TARGET_EXTRA="$TARGET_EXTRA")
+  jq --argjson metric "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.metrics += [$metric]' <"$HPA_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$HPA_FILE"
 }
 
 fn-scheduler-kubernetes-autoscale-rule-validate() {
