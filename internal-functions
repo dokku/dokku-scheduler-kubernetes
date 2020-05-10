@@ -12,6 +12,7 @@ cmd-scheduler-kubernetes-rolling-update() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare APP="$1"
 
+  verify_app_name "$APP"
   local DOKKU_SCHEDULER=$(get_app_scheduler "$APP")
   if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
     dokku_log_fail "Scheduler for $APP is set to $DOKKU_SCHEDULER"

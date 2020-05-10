@@ -14,6 +14,7 @@ cmd-scheduler-kubernetes-autoscale-set() {
   [[ -z "$PROC_TYPE" ]] && dokku_log_fail "Please specify a process type to run the command on"
   [[ -z "$KEY" ]] && dokku_log_fail "No key specified"
 
+  verify_app_name "$APP"
   if ! fn-in-array "$KEY" "${VALID_KEYS[@]}"; then
     dokku_log_fail "Invalid key specified, valid keys include: max-replicas, min-replicas"
   fi

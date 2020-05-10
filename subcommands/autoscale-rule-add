@@ -14,6 +14,7 @@ cmd-scheduler-kubernetes-autoscale-rule-add() {
   [[ -z "$PROC_TYPE" ]] && dokku_log_fail "Please specify a process type to run the command on"
   [[ -z "$RULE" ]] && dokku_log_fail "No rule specified"
 
+  verify_app_name "$APP"
   fn-scheduler-kubernetes-autoscale-rule-validate "$RULE"
 
   local METRIC_TYPE="$(echo "$RULE" | cut -d':' -f1)"

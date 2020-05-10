@@ -13,6 +13,7 @@ cmd-scheduler-kubernetes-autoscale-rule-list() {
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
   [[ -z "$PROC_TYPE" ]] && dokku_log_fail "Please specify a process type to run the command on"
 
+  verify_app_name "$APP"
   dokku_log_info2_quiet "Autoscaling rules for ${PROC_TYPE}"
   fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE"
 }
