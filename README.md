@@ -173,7 +173,7 @@ dokku scheduler-kubernetes:autoscale-set APP PROC_TYPE min-replicas 1
 dokku scheduler-kubernetes:autoscale-set APP PROC_TYPE max-replicas 10
 ```
 
-You also need to add autoscaling rules. These can be managed via the `:autoscale-rule-add` command. Adding a rule for a target-name/metric-type combination that already exists will override the existing rule with a warning message on stderr.
+You also need to add autoscaling rules. These can be managed via the `:autoscale-rule-add` command. Adding a rule for a target-name/metric-type combination that already exists will override any existing rules.
 
 Rules can be added for the following metric types:
 
