@@ -1,0 +1,13 @@
+{
+  "type": "External",
+  "external": {
+    "metric": {
+      "name": "{{ $.TARGET_NAME }}",
+      "selector": "{{ $.TARGET_SELECTOR }}"
+    },
+    "target": {
+      "type": "{{ $.TARGET_TYPE }}",
+      "{{ $.TARGET_TYPE_KEY }}": "{{ $.TARGET_VALUE }}"
+    }
+  }
+}

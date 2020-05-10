@@ -1,7 +1,0 @@
-{
-  "type": "Pod",
-  "pods": {
-    "metricName": "{{ $.TARGET_NAME }}",
-    "{{ $.TARGET_TYPE }}": {{ $.TARGET_VALUE }}
-  }
-}
