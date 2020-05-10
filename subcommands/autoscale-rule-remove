@@ -16,8 +16,11 @@ cmd-scheduler-kubernetes-autoscale-rule-remove() {
 
   fn-scheduler-kubernetes-autoscale-rule-validate "$RULE"
 
-  dokku_log_info2_quiet "Removing rule from ${PROC_TYPE}"
-  fn-plugin-property-list-remove-by-prefix "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE" "$RULE"
+  local METRIC_TYPE="$(echo "$RULE" | cut -d':' -f1)"
+  local TARGET_NAME="$(echo "$RULE" | cut -d':' -f2)"
+
+  dokku_log_info2_quiet "Removing rule for ${PROC_TYPE}: $METRIC_TYPE:$TARGET_NAME"
+  fn-plugin-property-list-remove-by-prefix "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE" "$METRIC_TYPE:$TARGET_NAME"
 }
 
 cmd-scheduler-kubernetes-autoscale-rule-remove "$@"

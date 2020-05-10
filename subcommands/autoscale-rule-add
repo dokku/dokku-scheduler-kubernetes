@@ -16,10 +16,10 @@ cmd-scheduler-kubernetes-autoscale-rule-add() {
 
   fn-scheduler-kubernetes-autoscale-rule-validate "$RULE"
 
-  METRIC_TYPE="$(echo "$RULE" | cut -d':' -f1)"
-  TARGET_NAME="$(echo "$RULE" | cut -d':' -f2)"
+  local METRIC_TYPE="$(echo "$RULE" | cut -d':' -f1)"
+  local TARGET_NAME="$(echo "$RULE" | cut -d':' -f2)"
 
-  dokku_log_info2_quiet "Adding rule to ${PROC_TYPE}"
+  dokku_log_info2_quiet "Setting rule for ${PROC_TYPE}: $RULE"
   fn-plugin-property-list-remove-by-prefix "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE" "$METRIC_TYPE:$TARGET_NAME"
   fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE" "$RULE"
 }
