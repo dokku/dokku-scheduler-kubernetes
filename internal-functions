@@ -169,6 +169,59 @@ fn-scheduler-kubernetes-add-cert-manager() {
   mv "$TMP_FILE" "$INGRESS_FILE"
 }
 
+fn-scheduler-kubernetes-autoscale-rule-validate() {
+  declare desc="validate an autoscale rule"
+  declare RULE="$1"
+  local METRIC_TYPE TARGET_NAME TARGET_TYPE TARGET_VALUE
+
+  METRIC_TYPE="$(echo "$RULE" | cut -d':' -f1)"
+  TARGET_NAME="$(echo "$RULE" | cut -d':' -f2)"
+  TARGET_TYPE="$(echo "$RULE" | cut -d':' -f3)"
+  TARGET_VALUE="$(echo "$RULE" | cut -d':' -f4)"
+
+  local VALID_METRIC_TYPES=("external" "ingress" "pods" "resource")
+  if ! fn-in-array "$METRIC_TYPE" "${VALID_METRIC_TYPES[@]}"; then
+    dokku_log_fail "Invalid metric type '${METRIC_TYPE}'"
+  fi
+
+  if [[ -n "$TARGET_NAME" ]]; then
+    dokku_log_fail "Missing target name in rule"
+  fi
+  if [[ -n "$TARGET_TYPE" ]]; then
+    dokku_log_fail "Missing target type in rule"
+  fi
+  if [[ -n "$TARGET_VALUE" ]]; then
+    dokku_log_fail "Missing target value in rule"
+  fi
+
+  if [[ "$METRIC_TYPE" == "external" ]]; then
+    local VALID_TARGET_TYPES=("AverageValue" "Value")
+    if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
+      dokku_log_fail "Invalid target type '${TARGET_TYPE}'"
+    fi
+  elif [[ "$METRIC_TYPE" == "ingress" ]]; then
+    local VALID_TARGET_TYPES=("AverageValue" "Value")
+    if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
+      dokku_log_fail "Invalid target type '${TARGET_TYPE}'"
+    fi
+  elif [[ "$METRIC_TYPE" == "pods" ]]; then
+    local VALID_TARGET_TYPES=("AverageValue")
+    if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
+      dokku_log_fail "Invalid target type '${TARGET_TYPE}'"
+    fi
+  elif [[ "$METRIC_TYPE" == "resource" ]]; then
+    local VALID_TARGET_NAMES=("cpu" "memory")
+    if ! fn-in-array "$TARGET_NAME" "${VALID_TARGET_NAMES[@]}"; then
+      dokku_log_fail "Invalid target name '${TARGET_NAME}'"
+    fi
+
+    local VALID_TARGET_TYPES=("AverageValue" "Utilization")
+    if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
+      dokku_log_fail "Invalid target type '${TARGET_TYPE}'"
+    fi
+  fi
+}
+
 fn-scheduler-kubernetes-ingress-build-config() {
   declare desc="scheduler-kubernetes ingress-build-config"
   declare APP="$1"
