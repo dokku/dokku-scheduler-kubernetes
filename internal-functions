@@ -140,17 +140,6 @@ help_desc
   fi
 }
 
-fn-scheduler-kubernetes-add-ingress-rule() {
-  declare APP="$1" PROC_TYPE="$2" PORT="$3" DOMAIN="$4" INGRESS_FILE="$5"
-  local RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress-rule.json.sigil"
-  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
-  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
-
-  local SIGIL_PARAMS=(APP="$APP" PROCESS_TYPE="$PROC_TYPE" PORT="$PORT" DOMAIN="$DOMAIN")
-  jq --argjson rule "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.rules += [$rule]' <"$INGRESS_FILE" >"$TMP_FILE"
-  mv "$TMP_FILE" "$INGRESS_FILE"
-}
-
 fn-scheduler-kubernetes-add-cert-manager() {
   declare INGRESS_FILE="$1" CERT_MANAGER_DOMAINS="${@:2}"
   local CERT_MANAGER_TLS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/cert-manager-tls.json.sigil"
@@ -166,6 +155,17 @@ fn-scheduler-kubernetes-add-cert-manager() {
   done
 
   jq -M '.metadata.annotations["cert-manager.io/cluster-issuer"] = "letsencrypt-prod"' <"$INGRESS_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$INGRESS_FILE"
+}
+
+fn-scheduler-kubernetes-add-ingress-rule() {
+  declare APP="$1" PROC_TYPE="$2" PORT="$3" DOMAIN="$4" INGRESS_FILE="$5"
+  local RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress-rule.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  local SIGIL_PARAMS=(APP="$APP" PROCESS_TYPE="$PROC_TYPE" PORT="$PORT" DOMAIN="$DOMAIN")
+  jq --argjson rule "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.rules += [$rule]' <"$INGRESS_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$INGRESS_FILE"
 }
 
