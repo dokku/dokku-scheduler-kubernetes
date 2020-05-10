@@ -19,10 +19,10 @@ cmd-scheduler-kubernetes-autoscale-set() {
 
   if [[ -n "$VALUE" ]]; then
     dokku_log_info2_quiet "Setting ${PROC_TYPE}.${KEY} to ${VALUE}"
-    fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "autoscale" "$PROC_TYPE.$KEY $VALUE"
+    fn-plugin-property-write "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.$KEY" "$VALUE"
   else
     dokku_log_info2_quiet "Unsetting ${PROC_TYPE}.${KEY}"
-    fn-plugin-property-list-remove-by-prefix "scheduler-kubernetes" "$APP" "autoscale" "$PROC_TYPE.KEY"
+    fn-plugin-property-delete "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.KEY"
   fi
 }
 
