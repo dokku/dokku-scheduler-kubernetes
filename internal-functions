@@ -184,13 +184,13 @@ fn-scheduler-kubernetes-autoscale-rule-validate() {
     dokku_log_fail "Invalid metric type '${METRIC_TYPE}'"
   fi
 
-  if [[ -n "$TARGET_NAME" ]]; then
+  if [[ -z "$TARGET_NAME" ]]; then
     dokku_log_fail "Missing target name in rule"
   fi
-  if [[ -n "$TARGET_TYPE" ]]; then
+  if [[ -z "$TARGET_TYPE" ]]; then
     dokku_log_fail "Missing target type in rule"
   fi
-  if [[ -n "$TARGET_VALUE" ]]; then
+  if [[ -z "$TARGET_VALUE" ]]; then
     dokku_log_fail "Missing target value in rule"
   fi
 
