@@ -177,9 +177,19 @@ fn-scheduler-kubernetes-autoscale-apply() {
   declare desc="applies horizontal pod autoscaler rules"
   declare APP="$1" PROC_TYPE="$2"
 
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
+  KUBE_ARGS=()
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
+  if [[ -n "$NAMESPACE" ]]; then
+    KUBE_ARGS+=("--namespace=$NAMESPACE")
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  fi
+
   RULES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE")"
   if [[ -z "$RULES" ]]; then
     dokku_log_warn "No rules specified for $APP.$PROC_TYPE"
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete hpa -l app-process-type="$APP-$PROC_TYPE"
     return
   fi
 
