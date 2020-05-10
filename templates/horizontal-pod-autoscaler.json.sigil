@@ -2,7 +2,7 @@
   "apiVersion": "autoscaling/v2beta2",
   "kind": "HorizontalPodAutoscaler",
   "metadata": {
-    "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+    "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
     "labels": {
       "app": "{{ $.APP }}",
       "process-type": "{{ $.PROCESS_TYPE }}",
