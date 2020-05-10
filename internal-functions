@@ -211,7 +211,7 @@ fn-scheduler-kubernetes-autoscale-apply() {
     fn-scheduler-kubernetes-autoscale-add-hpa-rule "$RULE" "$TMP_FILE"
   done
 
-  cat "$TMP_FILE"
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
 }
 
 fn-scheduler-kubernetes-autoscale-add-hpa-rule() {
