@@ -5,9 +5,9 @@ source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
 set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
-cmd-scheduler-kubernetes-autoscale-rule-remove() {
-  declare desc="remove an autoscale rule for an app/proc-type combination"
-  declare cmd="scheduler-kubernetes:autoscale-rule-remove" argv=("$@")
+cmd-scheduler-kubernetes-autoscale-rule-list() {
+  declare desc="list autoscale rules for an app/proc-type combination"
+  declare cmd="scheduler-kubernetes:autoscale-rule-list" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare APP="$1" PROC_TYPE="$2"
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
@@ -17,4 +17,4 @@ cmd-scheduler-kubernetes-autoscale-rule-remove() {
   fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE"
 }
 
-cmd-scheduler-kubernetes-autoscale-rule-remove "$@"
+cmd-scheduler-kubernetes-autoscale-rule-list "$@"
