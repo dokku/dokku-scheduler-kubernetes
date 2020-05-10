@@ -235,6 +235,8 @@ fn-scheduler-kubernetes-ingress-build-config() {
   local CERT_MANAGER_EMAIL="$(config_get --global CERT_MANAGER_EMAIL || true)"
   local CERT_MANAGER_DOMAINS=()
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
   if [[ -n "$CERT_MANAGER_EMAIL" ]]; then
     local CERTIFICATE_ISSUER_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/certificate-issuer.json.sigil"
     local SIGIL_PARAMS=(CERT_MANAGER_EMAIL="$CERT_MANAGER_EMAIL")
@@ -245,7 +247,6 @@ fn-scheduler-kubernetes-ingress-build-config() {
   local HAS_RULE=false
   local APP_NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   local INGRESS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress.json.sigil"
-  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   local SIGIL_PARAMS=()
   sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
