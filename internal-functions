@@ -194,31 +194,23 @@ fn-scheduler-kubernetes-autoscale-rule-validate() {
     dokku_log_fail "Missing target value in rule"
   fi
 
+  local VALID_TARGET_TYPES=()
   if [[ "$METRIC_TYPE" == "external" ]]; then
-    local VALID_TARGET_TYPES=("AverageValue" "Value")
-    if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
-      dokku_log_fail "Invalid target type '${TARGET_TYPE}'"
-    fi
+    VALID_TARGET_TYPES=("AverageValue" "Value")
   elif [[ "$METRIC_TYPE" == "ingress" ]]; then
-    local VALID_TARGET_TYPES=("AverageValue" "Value")
-    if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
-      dokku_log_fail "Invalid target type '${TARGET_TYPE}'"
-    fi
+    VALID_TARGET_TYPES=("AverageValue" "Value")
   elif [[ "$METRIC_TYPE" == "pods" ]]; then
-    local VALID_TARGET_TYPES=("AverageValue")
-    if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
-      dokku_log_fail "Invalid target type '${TARGET_TYPE}'"
-    fi
+    VALID_TARGET_TYPES=("AverageValue")
   elif [[ "$METRIC_TYPE" == "resource" ]]; then
+    VALID_TARGET_TYPES=("AverageValue" "Utilization")
     local VALID_TARGET_NAMES=("cpu" "memory")
     if ! fn-in-array "$TARGET_NAME" "${VALID_TARGET_NAMES[@]}"; then
-      dokku_log_fail "Invalid target name '${TARGET_NAME}'"
+      dokku_log_fail "Invalid target name '${TARGET_NAME}', valid types: ${VALID_TARGET_NAMES[@]}"
     fi
+  fi
 
-    local VALID_TARGET_TYPES=("AverageValue" "Utilization")
-    if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
-      dokku_log_fail "Invalid target type '${TARGET_TYPE}'"
-    fi
+  if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
+    dokku_log_fail "Invalid target type '${TARGET_TYPE}', valid types: ${VALID_TARGET_TYPES[@]}"
   fi
 }
 
