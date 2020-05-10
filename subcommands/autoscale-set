@@ -5,7 +5,7 @@ set -eo pipefail
 [[ $DOKKU_TRACE ]] && set -x
 
 cmd-scheduler-kubernetes-autoscale-set() {
-  declare desc="set or clear a scheduler-kubernetes autoscale settings for an app"
+  declare desc="set or clear autoscale settings for an app/proc-type combination"
   declare cmd="scheduler-kubernetes:autoscale-set" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare APP="$1" PROC_TYPE="$2" KEY="$3" VALUE="$4"
