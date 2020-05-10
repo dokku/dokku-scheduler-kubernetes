@@ -169,6 +169,33 @@ fn-scheduler-kubernetes-add-ingress-rule() {
   mv "$TMP_FILE" "$INGRESS_FILE"
 }
 
+fn-scheduler-kubernetes-autoscale-apply() {
+  declare desc="applies horizontal pod autoscaler rules"
+  declare APP="$1" PROC_TYPE="$2"
+
+  RULES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE")"
+  if [[ -z "$RULES" ]]; then
+    dokku_log_warn "No rules specified for $APP.$PROC_TYPE"
+    return
+  fi
+
+  local INGRESS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/horizontal-pod-autoscaler.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  MAX_REPLICAS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.max-replicas" "")"
+  MIN_REPLICAS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.min-replicas" "")"
+  if [[ -z "$MAX_REPLICAS" ]] || [[ -z "$MIN_REPLICAS" ]]; then
+    dokku_log_warn "Must specify max-replicas and min-replicas for $APP.$PROC_TYPE"
+    return
+  fi
+
+  local SIGIL_PARAMS=(APP="$APP" MAX_REPLICAS="$MAX_REPLICAS" MIN_REPLICAS="$MIN_REPLICAS" PROCESS_TYPE="$PROC_TYPE")
+  sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+
+  cat "$TMP_FILE"
+}
+
 fn-scheduler-kubernetes-autoscale-rule-validate() {
   declare desc="validate an autoscale rule"
   declare RULE="$1"
