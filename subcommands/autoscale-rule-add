@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-scheduler-kubernetes-autoscale-rule-add() {
+  declare desc="add an autoscale rule for an app/proc-type combination"
+  declare cmd="scheduler-kubernetes:autoscale-rule-add" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare APP="$1" PROC_TYPE="$2" RULE="$3"
+  [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
+  [[ -z "$PROC_TYPE" ]] && dokku_log_fail "Please specify a process type to run the command on"
+  [[ -z "$RULE" ]] && dokku_log_fail "No rule specified"
+
+  verify_app_name "$APP"
+  fn-scheduler-kubernetes-autoscale-rule-validate "$RULE"
+
+  local METRIC_TYPE="$(echo "$RULE" | cut -d':' -f1)"
+  local TARGET_NAME="$(echo "$RULE" | cut -d':' -f2)"
+
+  dokku_log_info2_quiet "Setting rule for ${PROC_TYPE}: $RULE"
+  fn-plugin-property-list-remove-by-prefix "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE" "$METRIC_TYPE:$TARGET_NAME" 2>/dev/null || true
+  fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE" "$RULE"
+}
+
+cmd-scheduler-kubernetes-autoscale-rule-add "$@"

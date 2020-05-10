@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-scheduler-kubernetes-autoscale-set() {
+  declare desc="set or clear autoscale settings for an app/proc-type combination"
+  declare cmd="scheduler-kubernetes:autoscale-set" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare APP="$1" PROC_TYPE="$2" KEY="$3" VALUE="$4"
+  local VALID_KEYS=("max-replicas" "min-replicas")
+  [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
+  [[ -z "$PROC_TYPE" ]] && dokku_log_fail "Please specify a process type to run the command on"
+  [[ -z "$KEY" ]] && dokku_log_fail "No key specified"
+
+  verify_app_name "$APP"
+  if ! fn-in-array "$KEY" "${VALID_KEYS[@]}"; then
+    dokku_log_fail "Invalid key specified, valid keys include: max-replicas, min-replicas"
+  fi
+
+  if [[ -n "$VALUE" ]]; then
+    dokku_log_info2_quiet "Setting ${PROC_TYPE}.${KEY} to ${VALUE}"
+    fn-plugin-property-write "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.$KEY" "$VALUE"
+  else
+    dokku_log_info2_quiet "Unsetting ${PROC_TYPE}.${KEY}"
+    fn-plugin-property-delete "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.$KEY"
+  fi
+}
+
+cmd-scheduler-kubernetes-autoscale-set "$@"

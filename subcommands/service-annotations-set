@@ -12,6 +12,7 @@ cmd-scheduler-kubernetes-service-annotations-set() {
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
   [[ -z "$KEY" ]] && dokku_log_fail "No key specified"
 
+  verify_app_name "$APP"
   if [[ -n "$VALUE" ]]; then
     dokku_log_info2_quiet "Setting ${KEY} to ${VALUE}"
     fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "service-annotations" "$KEY $VALUE"

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-scheduler-kubernetes-autoscale-rule-remove() {
+  declare desc="remove an autoscale rule for an app/proc-type combination"
+  declare cmd="scheduler-kubernetes:autoscale-rule-remove" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare APP="$1" PROC_TYPE="$2" RULE="$3"
+  [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
+  [[ -z "$PROC_TYPE" ]] && dokku_log_fail "Please specify a process type to run the command on"
+  [[ -z "$RULE" ]] && dokku_log_fail "No rule specified"
+
+  verify_app_name "$APP"
+
+  local METRIC_TYPE="$(echo "$RULE" | cut -d':' -f1)"
+  local TARGET_NAME="$(echo "$RULE" | cut -d':' -f2)"
+
+  local VALID_METRIC_TYPES=("external" "ingress" "pods" "resource")
+  if ! fn-in-array "$METRIC_TYPE" "${VALID_METRIC_TYPES[@]}"; then
+    dokku_log_fail "Invalid metric type '${METRIC_TYPE}'"
+  fi
+
+  if [[ -z "$TARGET_NAME" ]]; then
+    dokku_log_fail "Missing target name in rule"
+  fi
+
+  dokku_log_info2_quiet "Removing rule for ${PROC_TYPE}: $METRIC_TYPE:$TARGET_NAME"
+  fn-plugin-property-list-remove-by-prefix "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE" "$METRIC_TYPE:$TARGET_NAME"
+}
+
+cmd-scheduler-kubernetes-autoscale-rule-remove "$@"

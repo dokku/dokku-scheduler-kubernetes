@@ -24,7 +24,7 @@ scheduler-kubernetes-scheduler-post-delete() {
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
   fi
 
-  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete pods,services,deployments -l app="$APP"
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete deployments,hpa,pdb,pods,services -l app="$APP"
 }
 
 scheduler-kubernetes-scheduler-post-delete "$@"

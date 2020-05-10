@@ -36,7 +36,6 @@ The following functionality has been implemented
 
 Unsupported at this time:
 
-- Autoscaling management
 - Custom docker-options (not applicable)
 - Deployment timeouts
 - Dockerfile support
@@ -83,7 +82,7 @@ dokku registry:set APP server gcr.io/dokku/
 
 Assuming your Dokku installation can push to the registry and your kubeconfig is valid, Dokku will deploy the app against the cluster.
 
-The namespace in use for a particular app can be customized using the `scheduler-kubernetes:set` command. This will apply to all future invocations of the plugin, and will not modify any existing resources. The `scheduler-kubernetes` will create the namespace via a `kubectl apply`.
+The namespace in use for a particular app can be customized using the `:set` command. This will apply to all future invocations of the plugin, and will not modify any existing resources. The `scheduler-kubernetes` will create the namespace via a `kubectl apply`.
 
 ```shell
 dokku scheduler-kubernetes:set APP namespace test
@@ -160,11 +159,85 @@ dokku scheduler-kubernetes:set APP pod-max-unavailable 1
 
 Pod Disruption Budgets will be updated on next deploy.
 
+### Deployment Autoscaling
+
+> This feature requires an installed metric server, uses the `autoscaling/v2beta2` api, and will apply immediately. Only `resource` rules are supported when using the official metric-server, all others require the prometheus-operator and prometheus-adapter.
+
+By default, Kubernetes deployments are not set to autoscale, but a HorizontalPodAutoscaler object can be managed for an app on a per-process type basis. Using the HorizontalPodAutoscaler will disable the normal usage of `ps:scale` for the specified app/process-type combination, as per Kubernetes best practices.
+
+At a minimum, both a min/max number of replicas must be set.
+
+```shell
+# set the min number of replicas
+dokku scheduler-kubernetes:autoscale-set APP PROC_TYPE min-replicas 1
+
+# set the max number of replicas
+dokku scheduler-kubernetes:autoscale-set APP PROC_TYPE max-replicas 10
+```
+
+You also need to add autoscaling rules. These can be managed via the `:autoscale-rule-add` command. Adding a rule for a target-name/metric-type combination that already exists will override any existing rules.
+
+Rules can be added for the following metric types:
+
+- `external`:
+  - format: `external:$NAME:$TYPE:$VALUE[:$SELECTOR]`
+  - fields:
+    - `$NAME`: The name of the external metric to track
+    - `$TYPE` (valid values: `[AverageValue, Value]`): The type of the target.
+    - `$VALUE`: The value to track.
+    - `$SELECTOR` (optional): The selector to use for filtering to one or more specific metric series.
+- `ingress`:
+  - format: `ingress:$NAME:$TYPE:$VALUE[:$INGRESS]`
+  - fields:
+    - `$NAME`: The name of the ingress metric to track.
+    - `$TYPE` (valid values: `[AverageValue, Value]`): The type of the target.
+    - `$VALUE`: The value to track.
+    - `$INGRESS` (default: `app-ingress`): The name of the ingress object to filter on.
+- `pods`
+  - format: `pods:$NAME:$TYPE:$VALUE`
+  - fields:
+    - `$NAME`: The name of the metric from the pod resource to track.
+    - `$TYPE` (valid values: `[AverageValue]`): The type of the target.
+    - `$VALUE`: The value to track.
+- `resource`
+  - format: `resource:$NAME:$TYPE:$VALUE`
+  - fields:
+    - `$NAME` (valid values: `[cpu, memory]`): The name of the metric to track. 
+    - `$TYPE` (valid values: `[AverageValue, Utilization]`): The type of the target.
+    - `$VALUE`: The value to track.
+
+```shell
+# set the cpu average utilization target
+dokku scheduler-kubernetes:autoscale-rule-add APP PROC_TYPE resource:cpu:Utilization:50
+```
+
+Rules can be listed via the `autoscale-rule-list` command:
+
+```shell
+dokku scheduler-kubernetes:autoscale-rule-list APP PROC_TYPE
+```
+
+Rules can be removed via the `:autoscale-rule-remove` command. This command takes the same arguments as the `autoscale-rule-add` command, though the value is optional. If a rule matching the specified arguments does not exist, the command will still return 0.
+
+```shell
+# remove the cpu rule
+dokku scheduler-kubernetes:autoscale-rule-remove APP PROC_TYPE resource:cpu:Utilization:50
+
+# remove the cpu rule by prefix
+dokku scheduler-kubernetes:autoscale-rule-remove APP PROC_TYPE resource:cpu:Utilization
+```
+
+Autoscaling rules are applied automatically during the next deploy, though may be immediately applied through the `:autoscale-rule-apply` command:
+
+```shell
+dokku scheduler-kubernetes:autoscale-rule-apply APP PROC_TYPE
+```
+
 ### Kubernetes Manifests
 
 > Warning: Running this command exposes app environment variables to stdout.
 
-The kubernetes manifest for a deployment or service can be displayed using the `scheduler-kubernetes:show-manifest` command. This manifest can be used to inspect what would be submitted to Kubernetes.
+The kubernetes manifest for a deployment or service can be displayed using the `:show-manifest` command. This manifest can be used to inspect what would be submitted to Kubernetes.
 
 ```shell
 # show the deployment manifest for the `web` process type
@@ -193,7 +266,7 @@ The command will exit non-zero if the specific manifest for the given app/proces
 
 #### Deployment Annotations
 
-These can be managed by the `scheduler-kubernetes:deployment-annotations-set` command.
+These can be managed by the `:deployment-annotations-set` command.
 
 ```shell
 # command structure
@@ -210,7 +283,7 @@ Currently, these apply globally to all processes within a deployed app.
 
 #### Pod Annotations
 
-These can be managed by the `scheduler-kubernetes:pod-annotations-set` command.
+These can be managed by the `:pod-annotations-set` command.
 
 ```shell
 # command structure
@@ -227,7 +300,7 @@ Currently, these apply globally to all processes within a deployed app.
 
 #### Service Annotations
 
-These can be managed by the `scheduler-kubernetes:service-annotations-set` command.
+These can be managed by the `:service-annotations-set` command.
 
 ```shell
 # command structure
@@ -244,7 +317,7 @@ Currently, they are applied to the `web` process, which is the only process for 
 
 ### Rolling Updates
 
-For deployments that use a `rollingUpdate` for rollouts, a `rollingUpdate` may be triggered at a later date via the `scheduler-kubernetes:rolling-update` command.
+For deployments that use a `rollingUpdate` for rollouts, a `rollingUpdate` may be triggered at a later date via the `:rolling-update` command.
 
 ```shell
 dokku scheduler-kubernetes:rolling-update APP
@@ -339,7 +412,7 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 ### `pre-deploy-kubernetes-apply`
 
 - Description: Allows a user to interact with the `deployment|service` manifest before it has been submitted.
-- Invoked by: `scheduler-deploy` trigger and `scheduler-kubernetes:show-manifest`
+- Invoked by: `scheduler-deploy` trigger and `:show-manifest`
 - Arguments: `$APP` `$PROC_TYPE` `$MANIFEST_FILE` `MANIFEST_TYPE`
 - Example:
 

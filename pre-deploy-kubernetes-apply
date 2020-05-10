@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+scheduler-kubernetes-pre-deploy-kubernetes-apply() {
+  declare desc="scheduler-kubernetes pre-deploy-kubernetes-apply plugin trigger"
+  declare trigger="scheduler-kubernetes pre-deploy-kubernetes-apply"
+  declare APP="$1" PROC_TYPE="$2" MANIFEST_FILE="$3" TYPE="$4"
+
+  if [[ "$TYPE" != "deployment" ]]; then
+    return
+  fi
+
+  if ! fn-scheduler-kubernetes-autoscale-in-use "$APP" "$PROC_TYPE"; then
+    return
+  fi
+
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  jq 'del(.spec.replicas)' <"$MANIFEST_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$MANIFEST_FILE"
+
+  fn-scheduler-kubernetes-autoscale-apply "$APP" "$PROC_TYPE"
+}
+
+scheduler-kubernetes-pre-deploy-kubernetes-apply "$@"

@@ -10,7 +10,6 @@ scheduler-kubernetes-scheduler-is-deployed() {
   declare trigger="scheduler-kubernetes scheduler-is-deployed"
   declare DOKKU_SCHEDULER="$1" APP="$2"
   local KUBE_OUTPUT
-  shift 2
 
   if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
     return

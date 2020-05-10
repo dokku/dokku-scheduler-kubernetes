@@ -1,0 +1,22 @@
+{
+  "apiVersion": "autoscaling/v2beta2",
+  "kind": "HorizontalPodAutoscaler",
+  "metadata": {
+    "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
+    "labels": {
+      "app": "{{ $.APP }}",
+      "process-type": "{{ $.PROCESS_TYPE }}",
+      "app-process-type": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+    }
+  },
+  "spec": {
+    "scaleTargetRef": {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}"
+    },
+    "minReplicas": {{ $.MIN_REPLICAS }},
+    "maxReplicas": {{ $.MAX_REPLICAS }},
+    "metrics": []
+  }
+}

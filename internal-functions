@@ -12,6 +12,7 @@ cmd-scheduler-kubernetes-rolling-update() {
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare APP="$1"
 
+  verify_app_name "$APP"
   local DOKKU_SCHEDULER=$(get_app_scheduler "$APP")
   if [[ "$DOKKU_SCHEDULER" != "kubernetes" ]]; then
     dokku_log_fail "Scheduler for $APP is set to $DOKKU_SCHEDULER"
@@ -111,6 +112,11 @@ cmd-scheduler-kubernetes-report-single() {
 scheduler_docker_local_help_content_func() {
   declare desc="return scheduler-kubernetes plugin help content"
   cat <<help_content
+    scheduler-kubernetes:autoscale-apply <app> <proc_type> <key> <value>, Apply autoscale settings for an app/proc-type combination
+    scheduler-kubernetes:autoscale-rule-add <app> <proc_type> <key> <value>, Add an autoscale rule for an app/proc-type combination
+    scheduler-kubernetes:autoscale-rule-list <app> <proc_type> <key> <value>, List autoscale rules for an app/proc-type combination
+    scheduler-kubernetes:autoscale-rule-remove <app> <proc_type> <key> <value>, Remove an autoscale rule for an app/proc-type combination
+    scheduler-kubernetes:autoscale-set <app> <proc_type> <key> <value>, Set or clear autoscale settings for an app/proc-type combination
     scheduler-kubernetes:deployment-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes deployment annotation for an app
     scheduler-kubernetes:pod-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes pod annotation for an app
     scheduler-kubernetes:report [<app>] [<flag>], Displays a scheduler-kubernetes report for one or more apps
@@ -139,17 +145,6 @@ help_desc
   fi
 }
 
-fn-scheduler-kubernetes-add-rule() {
-  declare APP="$1" PROC_TYPE="$2" PORT="$3" DOMAIN="$4" INGRESS_FILE="$5"
-  local RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/rule.json.sigil"
-  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
-  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
-
-  local SIGIL_PARAMS=(APP="$APP" PROCESS_TYPE="$PROC_TYPE" PORT="$PORT" DOMAIN="$DOMAIN")
-  jq --argjson rule "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.rules += [$rule]' <"$INGRESS_FILE" >"$TMP_FILE"
-  mv "$TMP_FILE" "$INGRESS_FILE"
-}
-
 fn-scheduler-kubernetes-add-cert-manager() {
   declare INGRESS_FILE="$1" CERT_MANAGER_DOMAINS="${@:2}"
   local CERT_MANAGER_TLS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/cert-manager-tls.json.sigil"
@@ -166,6 +161,151 @@ fn-scheduler-kubernetes-add-cert-manager() {
 
   jq -M '.metadata.annotations["cert-manager.io/cluster-issuer"] = "letsencrypt-prod"' <"$INGRESS_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$INGRESS_FILE"
+}
+
+fn-scheduler-kubernetes-add-ingress-rule() {
+  declare APP="$1" PROC_TYPE="$2" PORT="$3" DOMAIN="$4" INGRESS_FILE="$5"
+  local RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress-rule.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  local SIGIL_PARAMS=(APP="$APP" PROCESS_TYPE="$PROC_TYPE" PORT="$PORT" DOMAIN="$DOMAIN")
+  jq --argjson rule "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.rules += [$rule]' <"$INGRESS_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$INGRESS_FILE"
+}
+
+fn-scheduler-kubernetes-autoscale-in-use() {
+  declare desc="checks if the horizontal pod autoscaler should be used for an app/proc-type combination"
+  declare APP="$1" PROC_TYPE="$2"
+
+  MAX_REPLICAS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.max-replicas" "")"
+  MIN_REPLICAS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.min-replicas" "")"
+  if [[ -z "$MAX_REPLICAS" ]] || [[ -z "$MIN_REPLICAS" ]]; then
+    return 1
+  fi
+
+  RULES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE")"
+  if [[ -z "$RULES" ]]; then
+    return 1
+  fi
+}
+
+fn-scheduler-kubernetes-autoscale-apply() {
+  declare desc="applies horizontal pod autoscaler rules"
+  declare APP="$1" PROC_TYPE="$2"
+
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
+  KUBE_ARGS=()
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
+  if [[ -n "$NAMESPACE" ]]; then
+    KUBE_ARGS+=("--namespace=$NAMESPACE")
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  fi
+
+  RULES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE")"
+  if [[ -z "$RULES" ]]; then
+    dokku_log_warn "No rules specified for $APP.$PROC_TYPE"
+    "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete hpa -l app-process-type="$APP-$PROC_TYPE"
+    return
+  fi
+
+  local INGRESS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/horizontal-pod-autoscaler.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  MAX_REPLICAS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.max-replicas" "")"
+  MIN_REPLICAS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.min-replicas" "")"
+  if [[ -z "$MAX_REPLICAS" ]] || [[ -z "$MIN_REPLICAS" ]]; then
+    dokku_log_warn "Must specify max-replicas and min-replicas for $APP.$PROC_TYPE"
+    return
+  fi
+
+  local SIGIL_PARAMS=(APP="$APP" MAX_REPLICAS="$MAX_REPLICAS" MIN_REPLICAS="$MIN_REPLICAS" PROCESS_TYPE="$PROC_TYPE")
+  sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+
+  for RULE in ${RULES[@]}; do
+    fn-scheduler-kubernetes-autoscale-add-hpa-rule "$RULE" "$TMP_FILE"
+  done
+
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
+}
+
+fn-scheduler-kubernetes-autoscale-add-hpa-rule() {
+  declare RULE="$1" HPA_FILE="$2"
+  local METRIC_TYPE="$(echo "$RULE" | cut -d':' -f1)"
+  local TARGET_NAME="$(echo "$RULE" | cut -d':' -f2)"
+  local TARGET_TYPE="$(echo "$RULE" | cut -d':' -f3)"
+  local TARGET_VALUE="$(echo "$RULE" | cut -d':' -f4)"
+  local TARGET_EXTRA="$(echo "$RULE" | cut -d':' -f5)"
+
+  local RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/horizontal-pod-autoscaler-metric-${METRIC_TYPE}.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  if [[ "$METRIC_TYPE" == "external" ]] && [[ -n "$TARGET_EXTRA" ]]; then
+    RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/horizontal-pod-autoscaler-metric-${METRIC_TYPE}-selector.json.sigil"
+  fi
+
+  if [[ "$METRIC_TYPE" == "ingress" ]] && [[ -z "$TARGET_EXTRA" ]]; then
+    TARGET_EXTRA="app-ingress"
+  fi
+
+  TARGET_TYPE_KEY="value"
+  if [[ "$TARGET_TYPE" == "AverageValue" ]]; then
+    TARGET_TYPE_KEY="averageValue"
+  elif [[ "$TARGET_TYPE" == "Utilization" ]]; then
+    TARGET_TYPE_KEY="averageUtilization"
+  fi
+
+  local SIGIL_PARAMS=(METRIC_TYPE="$METRIC_TYPE" TARGET_NAME="$TARGET_NAME" TARGET_TYPE="$TARGET_TYPE" TARGET_VALUE="$TARGET_VALUE" TARGET_EXTRA="$TARGET_EXTRA" TARGET_TYPE_KEY="$TARGET_TYPE_KEY")
+  jq --argjson metric "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.metrics += [$metric]' <"$HPA_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$HPA_FILE"
+}
+
+fn-scheduler-kubernetes-autoscale-rule-validate() {
+  declare desc="validate an autoscale rule"
+  declare RULE="$1"
+  local METRIC_TYPE TARGET_NAME TARGET_TYPE TARGET_VALUE
+
+  METRIC_TYPE="$(echo "$RULE" | cut -d':' -f1)"
+  TARGET_NAME="$(echo "$RULE" | cut -d':' -f2)"
+  TARGET_TYPE="$(echo "$RULE" | cut -d':' -f3)"
+  TARGET_VALUE="$(echo "$RULE" | cut -d':' -f4)"
+
+  local VALID_METRIC_TYPES=("external" "ingress" "pods" "resource")
+  if ! fn-in-array "$METRIC_TYPE" "${VALID_METRIC_TYPES[@]}"; then
+    dokku_log_fail "Invalid metric type '${METRIC_TYPE}'"
+  fi
+
+  if [[ -z "$TARGET_NAME" ]]; then
+    dokku_log_fail "Missing target name in rule"
+  fi
+  if [[ -z "$TARGET_TYPE" ]]; then
+    dokku_log_fail "Missing target type in rule"
+  fi
+  if [[ -z "$TARGET_VALUE" ]]; then
+    dokku_log_fail "Missing target value in rule"
+  fi
+
+  local VALID_TARGET_TYPES=()
+  if [[ "$METRIC_TYPE" == "external" ]]; then
+    VALID_TARGET_TYPES=("AverageValue" "Value")
+  elif [[ "$METRIC_TYPE" == "ingress" ]]; then
+    VALID_TARGET_TYPES=("AverageValue" "Value")
+  elif [[ "$METRIC_TYPE" == "pods" ]]; then
+    VALID_TARGET_TYPES=("AverageValue")
+  elif [[ "$METRIC_TYPE" == "resource" ]]; then
+    VALID_TARGET_TYPES=("AverageValue" "Utilization")
+    local VALID_TARGET_NAMES=("cpu" "memory")
+    if ! fn-in-array "$TARGET_NAME" "${VALID_TARGET_NAMES[@]}"; then
+      dokku_log_fail "Invalid target name '${TARGET_NAME}', valid types: ${VALID_TARGET_NAMES[@]}"
+    fi
+  fi
+
+  if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
+    dokku_log_fail "Invalid target type '${TARGET_TYPE}', valid types: ${VALID_TARGET_TYPES[@]}"
+  fi
 }
 
 fn-scheduler-kubernetes-ingress-build-config() {
@@ -189,6 +329,8 @@ fn-scheduler-kubernetes-ingress-build-config() {
   local CERT_MANAGER_EMAIL="$(config_get --global CERT_MANAGER_EMAIL || true)"
   local CERT_MANAGER_DOMAINS=()
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
   if [[ -n "$CERT_MANAGER_EMAIL" ]]; then
     local CERTIFICATE_ISSUER_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/certificate-issuer.json.sigil"
     local SIGIL_PARAMS=(CERT_MANAGER_EMAIL="$CERT_MANAGER_EMAIL")
@@ -199,7 +341,6 @@ fn-scheduler-kubernetes-ingress-build-config() {
   local HAS_RULE=false
   local APP_NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
   local INGRESS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress.json.sigil"
-  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   local SIGIL_PARAMS=()
   sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
@@ -242,7 +383,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
         fi
 
         HAS_RULE=true
-        fn-scheduler-kubernetes-add-rule "$app" "$PROC_TYPE" "5000" "$DOMAIN" "$TMP_FILE"
+        fn-scheduler-kubernetes-add-ingress-rule "$app" "$PROC_TYPE" "5000" "$DOMAIN" "$TMP_FILE"
       done <"$DOKKU_VHOST_FILE"
     done <"$DOKKU_SCALE_FILE"
   done

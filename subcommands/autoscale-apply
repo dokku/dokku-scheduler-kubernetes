@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-scheduler-kubernetes-autoscale-apply() {
+  declare desc="apply autoscale settings for an app/proc-type combination"
+  declare cmd="scheduler-kubernetes:autoscale-apply" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare APP="$1" PROC_TYPE="$2"
+  [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
+  [[ -z "$PROC_TYPE" ]] && dokku_log_fail "Please specify a process type to run the command on"
+
+  verify_app_name "$APP"
+  fn-scheduler-kubernetes-autoscale-apply "$APP" "$PROC_TYPE"
+}
+
+cmd-scheduler-kubernetes-autoscale-apply "$@"
