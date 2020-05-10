@@ -224,7 +224,14 @@ fn-scheduler-kubernetes-autoscale-add-hpa-rule() {
     TARGET_EXTRA="app-ingress"
   fi
 
-  local SIGIL_PARAMS=(METRIC_TYPE="$METRIC_TYPE" TARGET_NAME="$TARGET_NAME" TARGET_TYPE="$TARGET_TYPE" TARGET_VALUE="$TARGET_VALUE" TARGET_EXTRA="$TARGET_EXTRA")
+  TARGET_TYPE_KEY="value"
+  if [[ "$TARGET_TYPE" == "AverageValue" ]]; then
+    TARGET_TYPE_KEY="averageValue"
+  elif [[ "$TARGET_TYPE" == "Utilization" ]]; then
+    TARGET_TYPE_KEY="averageUtilization"
+  fi
+
+  local SIGIL_PARAMS=(METRIC_TYPE="$METRIC_TYPE" TARGET_NAME="$TARGET_NAME" TARGET_TYPE="$TARGET_TYPE" TARGET_VALUE="$TARGET_VALUE" TARGET_EXTRA="$TARGET_EXTRA" TARGET_TYPE_KEY="$TARGET_TYPE_KEY")
   jq --argjson metric "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.metrics += [$metric]' <"$HPA_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$HPA_FILE"
 }
