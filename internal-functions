@@ -140,9 +140,9 @@ help_desc
   fi
 }
 
-fn-scheduler-kubernetes-add-rule() {
+fn-scheduler-kubernetes-add-ingress-rule() {
   declare APP="$1" PROC_TYPE="$2" PORT="$3" DOMAIN="$4" INGRESS_FILE="$5"
-  local RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/rule.json.sigil"
+  local RULE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress-rule.json.sigil"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
@@ -288,7 +288,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
         fi
 
         HAS_RULE=true
-        fn-scheduler-kubernetes-add-rule "$app" "$PROC_TYPE" "5000" "$DOMAIN" "$TMP_FILE"
+        fn-scheduler-kubernetes-add-ingress-rule "$app" "$PROC_TYPE" "5000" "$DOMAIN" "$TMP_FILE"
       done <"$DOKKU_VHOST_FILE"
     done <"$DOKKU_SCALE_FILE"
   done
