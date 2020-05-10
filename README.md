@@ -163,7 +163,9 @@ Pod Disruption Budgets will be updated on next deploy.
 
 > This feature requires an installed metric server, uses the `autoscaling/v2beta2` api, and will apply immediately. Only `resource` rules are supported when using the official metric-server, all others require the prometheus-operator and prometheus-adapter.
 
-By default, Kubernetes deployments are not set to autoscale, but a HorizontalPodAutoscaler object can be managed for an app on a per-process type basis. At a minimum, both a min/max number of replicas must be set.
+By default, Kubernetes deployments are not set to autoscale, but a HorizontalPodAutoscaler object can be managed for an app on a per-process type basis. Using the HorizontalPodAutoscaler will disable the normal usage of `ps:scale` for the specified app/process-type combination, as per Kubernetes best practices.
+
+At a minimum, both a min/max number of replicas must be set.
 
 ```shell
 # set the min number of replicas

@@ -174,6 +174,22 @@ fn-scheduler-kubernetes-add-ingress-rule() {
   mv "$TMP_FILE" "$INGRESS_FILE"
 }
 
+fn-scheduler-kubernetes-autoscale-in-use() {
+  declare desc="checks if the horizontal pod autoscaler should be used for an app/proc-type combination"
+  declare APP="$1" PROC_TYPE="$2"
+
+  MAX_REPLICAS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.max-replicas" "")"
+  MIN_REPLICAS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE.min-replicas" "")"
+  if [[ -z "$MAX_REPLICAS" ]] || [[ -z "$MIN_REPLICAS" ]]; then
+    return 1
+  fi
+
+  RULES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE")"
+  if [[ -z "$RULES" ]]; then
+    return 1
+  fi
+}
+
 fn-scheduler-kubernetes-autoscale-apply() {
   declare desc="applies horizontal pod autoscaler rules"
   declare APP="$1" PROC_TYPE="$2"
