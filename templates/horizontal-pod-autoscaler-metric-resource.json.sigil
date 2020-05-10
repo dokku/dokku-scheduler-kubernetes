@@ -4,7 +4,7 @@
     "name": "{{ $.TARGET_NAME }}",
     "target": {
       "type": "{{ $.TARGET_TYPE }}",
-      "{{ $.TARGET_TYPE_KEY }}": "{{ $.TARGET_VALUE }}"
+      "{{ $.TARGET_TYPE_KEY }}": {{ $.TARGET_VALUE }}
     }
   }
 }
