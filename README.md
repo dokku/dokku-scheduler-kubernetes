@@ -36,7 +36,6 @@ The following functionality has been implemented
 
 Unsupported at this time:
 
-- Autoscaling management
 - Custom docker-options (not applicable)
 - Deployment timeouts
 - Dockerfile support
