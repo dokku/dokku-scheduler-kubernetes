@@ -71,6 +71,7 @@ dokku config:set APP DOKKU_SCHEDULER=kubernetes
 You also need to ensure your kubectl has the correct context specified:
 
 ```shell
+# as the dokku user
 kubectl config use-context YOUR_NAME
 ```
 
@@ -82,7 +83,7 @@ dokku registry:set APP server gcr.io/dokku/
 
 Assuming your Dokku installation can push to the registry and your kubeconfig is valid, Dokku will deploy the app against the cluster.
 
-The namespace in use for a particular app can be customized using the `:set` command. This will apply to all future invocations of the plugin, and will not modify any existing resources. The `scheduler-kubernetes` will create the namespace via a `kubectl apply`.
+The namespace in use for a particular app can be customized using the `:set` command. This will apply to all future invocations of the plugin, and will not modify any existing resources. If unspecified, the namespace in use is the cluster default namespace. The `scheduler-kubernetes` will create the namespace via a `kubectl apply`.
 
 ```shell
 dokku scheduler-kubernetes:set APP namespace test
