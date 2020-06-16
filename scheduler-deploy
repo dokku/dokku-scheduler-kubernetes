@@ -38,7 +38,7 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
   fi
 
-  IMAGE_PULL_SECRETS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "imagePullSecrets" "")"
+  local IMAGE_PULL_SECRETS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "imagePullSecrets" "")"
 
   local SERVICE_PROCESS_TYPES=$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "service-process-types" "")
   local VALID_SERVICE_TYPES

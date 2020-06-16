@@ -27,6 +27,7 @@ cmd-scheduler-kubernetes-show-manifest() {
   local IMAGE_TAG="$(get_running_image_tag "$APP")"
   local IMAGE=$(get_deploying_app_image_name "$APP" "$IMAGE_TAG")
 
+  local IMAGE_PULL_SECRETS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "imagePullSecrets" "")"
   local SERVICE_PROCESS_TYPES=$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "service-process-types" "")
   local VALID_SERVICE_TYPES
   if [[ -n "$SERVICE_PROCESS_TYPES" ]]; then
