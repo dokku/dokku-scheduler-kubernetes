@@ -33,6 +33,7 @@ The following functionality has been implemented
 - Pod Disruption Budgets
 - Resource limits and reservations (reservations == kubernetes requests)
 - Zero-downtime deploys via Deployment healthchecks
+- Traffic to non-web containers (via a configurable list)
 
 Unsupported at this time:
 
@@ -46,13 +47,13 @@ Unsupported at this time:
   - `enter`
   - `logs:failed`
   - `run`
-- Traffic to non-web containers (requires service object creation)
 
 ### Notes
 
 - Each `Procfile` entry will be turned into a kubernetes `Deployment` object.
 - Each `Procfile` entry name _must_ be a valid DNS subdomain.
 - The `web` process will also create a `Service` object.
+- Non-web processes can create a `Service` object via a configurable property.
 - All created Kubernetes objects are tracked to completion via `kubedog`.
 - All manifest templates are hardcoded in the plugin.
 
@@ -105,7 +106,7 @@ dokku scheduler-kubernetes:set $APP imagePullSecrets registry-credential
 > helm install nginx-ingress stable/nginx-ingress --set controller.publishService.enabled=true
 > ```
 
-A Kubernetes service object is created for each `web` process. Additionally, if the app has it's `proxy-type` set to `nginx-ingress`, then we will also create or update a Kubernetes ingress object within the namespace configured for the app. This can be set as follows:
+A Kubernetes Service object is created for each `web` process. Additionally, if the app has it's `proxy-type` set to `nginx-ingress`, then we will also create or update a Kubernetes ingress object within the namespace configured for the app. This can be set as follows:
 
 ```shell
 dokku config:set $APP DOKKU_APP_PROXY_TYPE=nginx-ingress
@@ -119,6 +120,14 @@ The ingress object has the following properties:
 - The configured service port for each rule is hardcoded to `5000`.
 
 To modify the manifest before it gets applied to the cluster, use the `pre-kubernetes-ingress-apply` plugin trigger.
+
+Service objects can also be created for specific process types by configuring the `service-process-types` property. This is a comma-separated list that is specific to an individual application, and will always implicitly include the `web` process type.
+
+```shell
+dokku scheduler-kubernetes:set $APP service-process-types http,worker
+```
+
+The PORT environment variable is hardcoded to 5000. No Ingress object is created for non-web processes.
 
 #### Automated SSL Integration via CertManager
 
