@@ -33,6 +33,7 @@ The following functionality has been implemented
 - Pod Disruption Budgets
 - Resource limits and reservations (reservations == kubernetes requests)
 - Zero-downtime deploys via Deployment healthchecks
+- Traffic to non-web containers (via a configurable list)
 
 Unsupported at this time:
 
@@ -46,13 +47,13 @@ Unsupported at this time:
   - `enter`
   - `logs:failed`
   - `run`
-- Traffic to non-web containers (requires service object creation)
 
 ### Notes
 
 - Each `Procfile` entry will be turned into a kubernetes `Deployment` object.
 - Each `Procfile` entry name _must_ be a valid DNS subdomain.
 - The `web` process will also create a `Service` object.
+- Non-web processes can create a `Service` object via a configurable property.
 - All created Kubernetes objects are tracked to completion via `kubedog`.
 - All manifest templates are hardcoded in the plugin.
 
@@ -65,7 +66,7 @@ Set the scheduler to `kubernetes`. This can be done per-app or globally:
 dokku config:set --global DOKKU_SCHEDULER=kubernetes
 
 # per-app
-dokku config:set APP DOKKU_SCHEDULER=kubernetes
+dokku config:set $APP DOKKU_SCHEDULER=kubernetes
 ```
 
 You also need to ensure your kubectl has the correct context specified:
@@ -78,7 +79,7 @@ kubectl config use-context YOUR_NAME
 And configure your registry:
 
 ```shell
-dokku registry:set APP server gcr.io/dokku/
+dokku registry:set $APP server gcr.io/dokku/
 ```
 
 Assuming your Dokku installation can push to the registry and your kubeconfig is valid, Dokku will deploy the app against the cluster.
@@ -86,13 +87,13 @@ Assuming your Dokku installation can push to the registry and your kubeconfig is
 The namespace in use for a particular app can be customized using the `:set` command. This will apply to all future invocations of the plugin, and will not modify any existing resources. If unspecified, the namespace in use is the cluster default namespace. The `scheduler-kubernetes` will create the namespace via a `kubectl apply`.
 
 ```shell
-dokku scheduler-kubernetes:set APP namespace test
+dokku scheduler-kubernetes:set $APP namespace test
 ```
 
 If deploying from a private docker registry and the cluster needs does not have open access to the registry, an `imagePullSecrets` value can be specified. This will be injected into the kubernetes deployment spec at deploy time.
 
 ```shell
-dokku scheduler-kubernetes:set APP imagePullSecrets registry-credential
+dokku scheduler-kubernetes:set $APP imagePullSecrets registry-credential
 ```
 
 > See [this doc](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) for more details on creating an `imagePullSecrets` secret file.
@@ -105,10 +106,10 @@ dokku scheduler-kubernetes:set APP imagePullSecrets registry-credential
 > helm install nginx-ingress stable/nginx-ingress --set controller.publishService.enabled=true
 > ```
 
-A Kubernetes service object is created for each `web` process. Additionally, if the app has it's `proxy-type` set to `nginx-ingress`, then we will also create or update a Kubernetes ingress object within the namespace configured for the app. This can be set as follows:
+A Kubernetes Service object is created for each `web` process. Additionally, if the app has it's `proxy-type` set to `nginx-ingress`, then we will also create or update a Kubernetes ingress object within the namespace configured for the app. This can be set as follows:
 
 ```shell
-dokku config:set APP DOKKU_APP_PROXY_TYPE=nginx-ingress
+dokku config:set $APP DOKKU_APP_PROXY_TYPE=nginx-ingress
 ```
 
 The ingress object has the following properties:
@@ -119,6 +120,14 @@ The ingress object has the following properties:
 - The configured service port for each rule is hardcoded to `5000`.
 
 To modify the manifest before it gets applied to the cluster, use the `pre-kubernetes-ingress-apply` plugin trigger.
+
+Service objects can also be created for specific process types by configuring the `service-process-types` property. This is a comma-separated list that is specific to an individual application, and will always implicitly include the `web` process type.
+
+```shell
+dokku scheduler-kubernetes:set $APP service-process-types http,worker
+```
+
+The PORT environment variable is hardcoded to 5000. No Ingress object is created for non-web processes.
 
 #### Automated SSL Integration via CertManager
 
@@ -133,7 +142,7 @@ To modify the manifest before it gets applied to the cluster, use the `pre-kuber
 
 At this time, the `scheduler-kubernetes` does not have support for custom SSL certificates. However, domains associated with an app can have a Letsencrypt SSL certificate provisioned automatically via the [CertManager](https://github.com/jetstack/cert-manager) Kubernetes add-on.
 
-To start using the CertManager, we'll first need to set the issuer email
+To start using the CertManager, we will first need to set the issuer email
 
 ```shell
 dokku config:set --global CERT_MANAGER_EMAIL=your@email.tld
@@ -142,7 +151,7 @@ dokku config:set --global CERT_MANAGER_EMAIL=your@email.tld
 Next, any apps that will require cert-manager integration will need to have that enabled:
 
 ```shell
-dokku scheduler-kubernetes:set APP cert-manager-enabled true
+dokku scheduler-kubernetes:set $APP cert-manager-enabled true
 ```
 
 On the next deploy or domain name change, the CertManager entry will be automatically updated to fetch an SSL certificate for all domains associated with all applications on the same ingress object.
@@ -152,10 +161,10 @@ On the next deploy or domain name change, the CertManager entry will be automati
 A PodDisruptionBudget object can be created, and will apply to all process types in an app. To configure this, the `pod-max-unavailable` and `pod-min-available` properties can be set:
 
 ```shell
-dokku scheduler-kubernetes:set APP pod-min-available 1
+dokku scheduler-kubernetes:set $APP pod-min-available 1
 
 # available in kubernetes 1.7+
-dokku scheduler-kubernetes:set APP pod-max-unavailable 1
+dokku scheduler-kubernetes:set $APP pod-max-unavailable 1
 ```
 
 Pod Disruption Budgets will be updated on next deploy.
@@ -170,10 +179,10 @@ At a minimum, both a min/max number of replicas must be set.
 
 ```shell
 # set the min number of replicas
-dokku scheduler-kubernetes:autoscale-set APP PROC_TYPE min-replicas 1
+dokku scheduler-kubernetes:autoscale-set $APP PROC_TYPE min-replicas 1
 
 # set the max number of replicas
-dokku scheduler-kubernetes:autoscale-set APP PROC_TYPE max-replicas 10
+dokku scheduler-kubernetes:autoscale-set $APP PROC_TYPE max-replicas 10
 ```
 
 You also need to add autoscaling rules. These can be managed via the `:autoscale-rule-add` command. Adding a rule for a target-name/metric-type combination that already exists will override any existing rules.
@@ -209,29 +218,29 @@ Rules can be added for the following metric types:
 
 ```shell
 # set the cpu average utilization target
-dokku scheduler-kubernetes:autoscale-rule-add APP PROC_TYPE resource:cpu:Utilization:50
+dokku scheduler-kubernetes:autoscale-rule-add $APP PROC_TYPE resource:cpu:Utilization:50
 ```
 
 Rules can be listed via the `autoscale-rule-list` command:
 
 ```shell
-dokku scheduler-kubernetes:autoscale-rule-list APP PROC_TYPE
+dokku scheduler-kubernetes:autoscale-rule-list $APP PROC_TYPE
 ```
 
 Rules can be removed via the `:autoscale-rule-remove` command. This command takes the same arguments as the `autoscale-rule-add` command, though the value is optional. If a rule matching the specified arguments does not exist, the command will still return 0.
 
 ```shell
 # remove the cpu rule
-dokku scheduler-kubernetes:autoscale-rule-remove APP PROC_TYPE resource:cpu:Utilization:50
+dokku scheduler-kubernetes:autoscale-rule-remove $APP PROC_TYPE resource:cpu:Utilization:50
 
 # remove the cpu rule by prefix
-dokku scheduler-kubernetes:autoscale-rule-remove APP PROC_TYPE resource:cpu:Utilization
+dokku scheduler-kubernetes:autoscale-rule-remove $APP PROC_TYPE resource:cpu:Utilization
 ```
 
 Autoscaling rules are applied automatically during the next deploy, though may be immediately applied through the `:autoscale-rule-apply` command:
 
 ```shell
-dokku scheduler-kubernetes:autoscale-rule-apply APP PROC_TYPE
+dokku scheduler-kubernetes:autoscale-rule-apply $APP PROC_TYPE
 ```
 
 ### Kubernetes Manifests
@@ -242,7 +251,7 @@ The kubernetes manifest for a deployment or service can be displayed using the `
 
 ```shell
 # show the deployment manifest for the `web` process type
-dokku scheduler-kubernetes:show-manifest APP PROC_TYPE MANIFEST_TYPE
+dokku scheduler-kubernetes:show-manifest $APP PROC_TYPE MANIFEST_TYPE
 ```
 
 This command can be used like so:
@@ -271,7 +280,7 @@ These can be managed by the `:deployment-annotations-set` command.
 
 ```shell
 # command structure
-dokku scheduler-kubernetes:deployment-annotations-set APP name value
+dokku scheduler-kubernetes:deployment-annotations-set $APP name value
 
 # set example
 dokku scheduler-kubernetes:deployment-annotations-set node-js-sample pod.kubernetes.io/lifetime 86400s
@@ -288,7 +297,7 @@ These can be managed by the `:pod-annotations-set` command.
 
 ```shell
 # command structure
-dokku scheduler-kubernetes:pod-annotations-set APP name value
+dokku scheduler-kubernetes:pod-annotations-set $APP name value
 
 # set example
 dokku scheduler-kubernetes:pod-annotations-set node-js-sample pod.kubernetes.io/lifetime 86400s
@@ -305,7 +314,7 @@ These can be managed by the `:service-annotations-set` command.
 
 ```shell
 # command structure
-dokku scheduler-kubernetes:service-annotations-set APP name value
+dokku scheduler-kubernetes:service-annotations-set $APP name value
 
 # set example
 dokku scheduler-kubernetes:service-annotations-set node-js-sample pod.kubernetes.io/lifetime 86400s
@@ -321,7 +330,7 @@ Currently, they are applied to the `web` process, which is the only process for 
 For deployments that use a `rollingUpdate` for rollouts, a `rollingUpdate` may be triggered at a later date via the `:rolling-update` command.
 
 ```shell
-dokku scheduler-kubernetes:rolling-update APP
+dokku scheduler-kubernetes:rolling-update $APP
 ```
 
 ### Health Checks

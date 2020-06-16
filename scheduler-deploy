@@ -38,7 +38,14 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
   fi
 
-  IMAGE_PULL_SECRETS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "imagePullSecrets" "")"
+  local IMAGE_PULL_SECRETS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "imagePullSecrets" "")"
+
+  local SERVICE_PROCESS_TYPES=$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "service-process-types" "")
+  local VALID_SERVICE_TYPES
+  if [[ -n "$SERVICE_PROCESS_TYPES" ]]; then
+    IFS=',' read -ra VALID_SERVICE_TYPES <<<"$SERVICE_PROCESS_TYPES"
+  fi
+  VALID_SERVICE_TYPES+=("web")
 
   while read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ ^#.* ]] && continue
@@ -65,12 +72,11 @@ scheduler-kubernetes-scheduler-deploy() {
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track deployment "${APP}-${PROC_TYPE}"
 
-    if [[ "$PROC_TYPE" == "web" ]]; then
+    if fn-in-array "$PROC_TYPE" "${VALID_SERVICE_TYPES[@]}"; then
       sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
       fn-set-service-annotations "$APP" "$TMP_FILE"
       plugn trigger pre-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" service
       "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
-      # "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track service "${APP}-${PROC_TYPE}"
     fi
 
     plugn trigger post-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" deployment

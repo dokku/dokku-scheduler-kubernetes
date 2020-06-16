@@ -81,6 +81,7 @@ cmd-scheduler-kubernetes-report-single() {
     "--scheduler-kubernetes-namespace: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
     "--scheduler-kubernetes-pod-max-unavailable: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "pod-max-unavailable" "")"
     "--scheduler-kubernetes-pod-min-available: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "pod-min-available" "")"
+    "--scheduler-kubernetes-service-process-types: $(fn-plugin-property-get "scheduler-kubernetes" "$APP" "service-process-types" "")"
   )
 
   if [[ -z "$INFO_FLAG" ]]; then
