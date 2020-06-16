@@ -70,7 +70,6 @@ scheduler-kubernetes-scheduler-deploy() {
       fn-set-service-annotations "$APP" "$TMP_FILE"
       plugn trigger pre-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" service
       "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
-      # "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track service "${APP}-${PROC_TYPE}"
     fi
 
     plugn trigger post-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" deployment
