@@ -31,7 +31,7 @@ scheduler-kubernetes-scheduler-logs() {
 
   local LOGS_ARGS="--tail $NUM"
   [[ "$TAIL" == "true" ]] && LOGS_ARG+=" --follow "
-  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" logs -l "$LABEL"
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" logs -l "$LABEL" "${LOG_ARGS[@]}"
 }
 
 scheduler-kubernetes-scheduler-logs "$@"
