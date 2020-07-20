@@ -2,7 +2,11 @@
   "apiVersion": "v1",
   "kind": "PersistentVolumeClaim",
   "metadata": {
-    "name": "{{ $.NAME }}"
+    "name": "{{ $.NAME }}",
+    "labels": {
+      "app": "{{ $.APP }}",
+      "app-pvc": "{{ $.APP }}-{{ $.NAME }}"
+    }
   },
   "spec": {
     "accessModes": [
