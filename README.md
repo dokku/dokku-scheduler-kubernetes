@@ -1,5 +1,7 @@
 # dokku-scheduler-kubernetes
 
+> If this plugin is missing a feature you need, consider [sponsoring development](https://github.com/dokku/.github/blob/master/SPONSORING.md). Pull requests always welcome!
+
 A Dokku plugin to integrate with kubernetes.
 
 ## Requirements
@@ -47,6 +49,8 @@ Unsupported at this time:
   - `enter`
   - `logs:failed`
   - `run`
+
+> If this plugin is missing a feature you need, consider [sponsoring development](https://github.com/dokku/.github/blob/master/SPONSORING.md). Pull requests always welcome!
 
 ### Notes
 
