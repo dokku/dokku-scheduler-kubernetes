@@ -1,4 +1,4 @@
 {
-    name:"{{ $.VOLUME_NAME }}"
+    name:"{{ $.VOLUME_NAME }}",
     mountPath:"{{ $.MOUNT_PATH }}"
 }
