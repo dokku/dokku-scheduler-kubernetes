@@ -1,6 +1,6 @@
 {
-    "name":"{{ $.VOLUME_NAME }}",
-    "persistentVolumeClaim":{
+    "name": "{{ $.VOLUME_NAME }}",
+    "persistentVolumeClaim": {
         "claimName": "{{ $.CLAIM_NAME }}"
     }
 }
