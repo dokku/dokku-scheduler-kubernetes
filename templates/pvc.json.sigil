@@ -4,8 +4,7 @@
   "metadata": {
     "name": "{{ $.NAME }}",
     "labels": {
-      "app": "{{ $.APP }}",
-      "app-pvc": "{{ $.APP }}-{{ $.NAME }}"
+      "pvc": "{{ $.NAME }}"
     }
   },
   "spec": {
