@@ -18,10 +18,10 @@ cmd-scheduler-kubernetes-add-pvc() {
         OPTIND=$((OPTIND + 1))
         local NAME="$val"
         ;;
-      access-modes)
+      access-mode)
         val="${!OPTIND}"
         OPTIND=$((OPTIND + 1))
-        local ACCESS_MODES="$val"
+        local ACCESS_MODE="$val"
         ;;
       storage)
         val="${!OPTIND}"
@@ -43,12 +43,14 @@ cmd-scheduler-kubernetes-add-pvc() {
     esac
   done
   [[ -z "$NAME" ]] && dokku_log_fail "Please specify a name for PVC"
-  [[ -z "$ACCESS_MODES" ]] && dokku_log_fail "Please specify an access mode for PVC"
+  [[ -z "$ACCESS_MODE" ]] && dokku_log_fail "Please specify an access mode for PVC"
+  [[ "$ACCESS_MODES" == ReadWriteOnce ]] || [[ "$ACCESS_MODES" == ReadWriteMany ]] || [[ "$ACCESS_MODES" == ReadOnlyMany ]] 
+  || dokku_log_fail "Please specify PVC access mode as either ReadWriteOnce, ReadOnlyMany,  ReadWriteMany"
   [[ -z "$STORAGE" ]] && dokku_log_fail "Please specify storage size for PVC"
   [[ -z "$STORAGE_CLASS_NAME" ]] && STORAGE_CLASS_NAME=""
   [[ -z "$NAMESPACE" ]] && dokku_log_fail "Please specify Namespace for PVC"
 
-  fn-scheduler-kubernetes-add-pvc "$NAME" "$ACCESS_MODES" "$STORAGE" "$STORAGE_CLASS_NAME" "$NAMESPACE"
+  fn-scheduler-kubernetes-add-pvc "$NAME" "$ACCESS_MODE" "$STORAGE" "$STORAGE_CLASS_NAME" "$NAMESPACE"
 }
 
 cmd-scheduler-kubernetes-add-pvc "$@"
