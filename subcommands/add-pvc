@@ -45,7 +45,7 @@ cmd-scheduler-kubernetes-add-pvc() {
   [[ -z "$NAME" ]] && dokku_log_fail "Please specify a name for PVC"
   [[ -z "$ACCESS_MODES" ]] && dokku_log_fail "Please specify an access mode for PVC"
   [[ -z "$STORAGE" ]] && dokku_log_fail "Please specify storage size for PVC"
-  [[ -z "$STORAGE_CLASS_NAME" ]] && dokku_log_fail "Please specify Storage class Name for PVC"
+  [[ -z "$STORAGE_CLASS_NAME" ]] && STORAGE_CLASS_NAME=""
   [[ -z "$NAMESPACE" ]] && dokku_log_fail "Please specify Namespace for PVC"
 
   fn-scheduler-kubernetes-add-pvc "$NAME" "$ACCESS_MODES" "$STORAGE" "$STORAGE_CLASS_NAME" "$NAMESPACE"
