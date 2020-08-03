@@ -677,7 +677,7 @@ fn-scheduler-kubernetes-add-pvc(){
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   SIGIL_PARAMS=(NAME="$NAME" ACCESS_MODE="$ACCESS_MODE" STORAGE="$STORAGE" STORAGE_CLASS_NAME="$STORAGE_CLASS_NAME")
-  sigil -f "$NAMESPACE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+  sigil -f "$PVC_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
 
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
 }
