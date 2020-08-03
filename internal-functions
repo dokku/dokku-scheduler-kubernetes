@@ -660,4 +660,24 @@ fn-set-ingress-annotations() {
     KEY="$KEY" VALUE="$VALUE" jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$INGRESS_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$INGRESS_FILE"
   done < <(fn-plugin-property-list-get "scheduler-kubernetes" "$APP_NAMESPACE" "ingress-annotations")
+fn-scheduler-kubernetes-add-pvc(){
+  declare desc="add persistent volume claim"
+  declare NAME="$1" ACCESS_MODE="$2" STORAGE="$3" STORAGE_CLASS_NAME="$4" NAMESPACE="$5"
+
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
+  KUBE_ARGS=()
+  if [[ -n "$NAMESPACE" ]]; then
+    KUBE_ARGS+=("--namespace=$NAMESPACE")
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  fi
+
+  local PVC_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/pvc.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  SIGIL_PARAMS=(NAME="$NAME" ACCESS_MODE="$ACCESS_MODE" STORAGE="$STORAGE" STORAGE_CLASS_NAME="$STORAGE_CLASS_NAME")
+  sigil -f "$NAMESPACE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
 }
