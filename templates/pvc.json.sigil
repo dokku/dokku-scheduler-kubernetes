@@ -13,7 +13,7 @@
     ],
     "resources": {
       "requests": {
-        "storage": "{{ $.STORAGE }}"
+        "storage": "{{ $.STORAGE }}Mi"
       }
     },
     "storageClassName": "{{ $.STORAGE_CLASS_NAME }}"
