@@ -44,8 +44,7 @@ cmd-scheduler-kubernetes-add-pvc() {
   done
   [[ -z "$NAME" ]] && dokku_log_fail "Please specify a name for PVC"
   [[ -z "$ACCESS_MODE" ]] && dokku_log_fail "Please specify an access mode for PVC"
-  [[ "$ACCESS_MODES" == ReadWriteOnce ]] || [[ "$ACCESS_MODES" == ReadWriteMany ]] || [[ "$ACCESS_MODES" == ReadOnlyMany ]] 
-  || dokku_log_fail "Please specify PVC access mode as either ReadWriteOnce, ReadOnlyMany,  ReadWriteMany"
+  [[ "$ACCESS_MODE" == ReadWriteOnce ]] || [[ "$ACCESS_MODE" == ReadWriteMany ]] || [[ "$ACCESS_MODE" == ReadOnlyMany ]] || dokku_log_fail "Please specify PVC access mode as either ReadWriteOnce, ReadOnlyMany,  ReadWriteMany"
   [[ -z "$STORAGE" ]] && dokku_log_fail "Please specify storage size for PVC"
   [[ -z "$STORAGE_CLASS_NAME" ]] && STORAGE_CLASS_NAME=""
   [[ -z "$NAMESPACE" ]] && dokku_log_fail "Please specify Namespace for PVC"
