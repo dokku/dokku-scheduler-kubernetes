@@ -9,20 +9,45 @@ cmd-scheduler-kubernetes-add-pvc() {
   declare desc="add a persistent volume claim"
   declare cmd="scheduler-kubernetes:add-pvc" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  while getopts name:access-modes:storage:storage-class-name:ns: option; do
-    case "${option}" in
-    name) NAME=${OPTARG} ;;
-    access-modes) ACCESS_MODES=${OPTARG} ;;
-    storage) STORAGE=${OPTARG} ;;
-    storage-class-name) STORAGE_CLASS_NAME=${OPTARG} ;;
-    ns) NAMESPACE=${OPTARG} ;;
+  while getopts ":-:" opt "$@"; do
+    case "$opt" in
+    -)
+      case "$OPTARG" in
+      name)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local NAME="$val"
+        ;;
+      access-modes)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local ACCESS_MODES="$val"
+        ;;
+      storage)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local STORAGE="$val"
+        ;;
+      storage-class-name)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local STORAGE_CLASS_NAME="$val"
+        ;;
+      ns)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local NAMESPACE="$val"
+        ;;
+      esac
+      ;;
     esac
   done
   [[ -z "$NAME" ]] && dokku_log_fail "Please specify a name for PVC"
   [[ -z "$ACCESS_MODES" ]] && dokku_log_fail "Please specify an access mode for PVC"
   [[ -z "$STORAGE" ]] && dokku_log_fail "Please specify storage size for PVC"
   [[ -z "$STORAGE_CLASS_NAME" ]] && dokku_log_fail "Please specify Storage class Name for PVC"
-  
+  [[ -z "$NAMESPACE" ]] && dokku_log_fail "Please specify Namespace for PVC"
+
   fn-scheduler-kubernetes-add-pvc "$NAME" "$ACCESS_MODES" "$STORAGE" "$STORAGE_CLASS_NAME" "$NAMESPACE"
 }
 
