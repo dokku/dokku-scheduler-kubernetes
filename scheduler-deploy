@@ -66,6 +66,7 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-healthchecks "$APP" "$PROC_TYPE" "$TMP_FILE"
     fn-set-deployment-annotations "$APP" "$TMP_FILE"
     fn-set-pod-annotations "$APP" "$TMP_FILE"
+    fn-set-mount "$APP" "$TMP_FILE"
 
     plugn trigger pre-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" deployment
 

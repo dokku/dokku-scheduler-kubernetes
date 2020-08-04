@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-scheduler-kubernetes-mount() {
+  declare desc="mount a volume"
+  declare cmd="scheduler-kubernetes:mount" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare APP="$1" && shift 1
+  while getopts ":-:" opt "$@"; do
+    case "$opt" in
+    -)
+      case "$OPTARG" in
+      name)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local NAME="$val"
+        ;;
+      claim-name)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local CLAIM_NAME="$val"
+        ;;
+      path)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local PATH="$val"
+        ;;
+      esac
+      ;;
+    esac
+  done
+  [[ -z "$NAME" ]] && dokku_log_fail "Please specify a volume name"
+  [[ -z "$CLAIM_NAME" ]] && dokku_log_fail "Please specify a PVC claim name"
+  [[ -z "$PATH" ]] && dokku_log_fail "Please specify a mount path"
+
+  dokku_log_info2_quiet "Setting Volume Name to ${NAME}"
+  fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "volumes" "$NAME"
+  dokku_log_info2_quiet "Setting Claim Name  to ${CLAIM_NAME} using Volume  ${NAME}"
+  fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "claim" "$NAME" "$CLAIM_NAME"
+  dokku_log_info2_quiet "Setting Path to ${PATH} using Volume  ${NAME}"
+  fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "path" "$NAME" "$PATH"
+
+}
+
+cmd-scheduler-kubernetes-mount "$@"

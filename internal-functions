@@ -681,3 +681,31 @@ fn-scheduler-kubernetes-add-pvc(){
 
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
 }
+
+fn-set-mount(){
+  declare desc="mount a volume on path"
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  VOLUME_COUNT="$(fn-plugin-property-list-length "scheduler-kubernetes" "$APP" "volumes")"
+  if [[ "$VOLUME_COUNT" == 0 ]]; then
+    return
+  fi
+  local VOLUMES_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/volumes.json.sigil"
+  local VOLUME_MOUNTS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/volume-mounts.json.sigil"
+
+  while IFS="" read -r p || [ -n "$p" ]; do
+    local NAME=$p
+    local CLAIM = fn-plugin-property-list-get-by-value "scheduler-kubernetes" "$APP" "claim" "$NAME"
+    local PATH = fn-plugin-property-list-get-by-value "scheduler-kubernetes" "$APP" "path" "$NAME"
+    
+    local SIGIL_PARAMS=(VOLUME_NAME="$NAME" CLAIM_NAME="$CLAIM")
+    jq --argjson volume "$(sigil -f "$VOLUMES_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.volumes += [$volume]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+
+    local SIGIL_PARAMS=(VOLUME_NAME="$NAME" CLAIM_NAME="$MOUNT_PATH")
+    jq --argjson mount "$(sigil -f "$VOLUME_MOUNTS_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.containers[0].volumeMounts += [$mount]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  done < <(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "volumes")
+}
