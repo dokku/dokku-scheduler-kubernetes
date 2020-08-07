@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-scheduler-kubernetes-unmount() {
+  declare desc="unmount a volume"
+  declare cmd="scheduler-kubernetes:unmount" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare APP="$1" && shift 1
+  [[ -z "$APP" ]] && dokku_log_fail "Please specify an App name"
+  verify_app_name "$APP"
+  while getopts ":-:" opt "$@"; do
+    case "$opt" in
+    -)
+      case "$OPTARG" in
+      name)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local NAME="$val"
+        ;;
+      claim-name)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local CLAIM_NAME="$val"
+        ;;
+      path)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local MOUNT_PATH="$val"
+        ;;
+      esac
+      ;;
+    esac
+  done
+  [[ -z "$NAME" ]] && dokku_log_fail "Please specify a volume name"
+  [[ -z "$CLAIM_NAME" ]] && dokku_log_fail "Please specify a PVC claim name"
+  [[ -z "$MOUNT_PATH" ]] && dokku_log_fail "Please specify a mount path"
+
+  dokku_log_info2_quiet "Removing Volume Name, Claim and Path ${NAME}:$CLAIM_NAME:$MOUNT_PATH"
+  fn-plugin-property-list-remove "scheduler-kubernetes" "$APP" "volumes" "$NAME:$CLAIM_NAME:$MOUNT_PATH"
+}
+
+cmd-scheduler-kubernetes-unmount "$@"
