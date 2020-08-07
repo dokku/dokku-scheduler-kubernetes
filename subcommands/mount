@@ -10,6 +10,8 @@ cmd-scheduler-kubernetes-mount() {
   declare cmd="scheduler-kubernetes:mount" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
   declare APP="$1" && shift 1
+  [[ -z "$APP" ]] && dokku_log_fail "Please specify an App name"
+  verify_app_name "$APP"
   while getopts ":-:" opt "$@"; do
     case "$opt" in
     -)
@@ -27,7 +29,7 @@ cmd-scheduler-kubernetes-mount() {
       path)
         val="${!OPTIND}"
         OPTIND=$((OPTIND + 1))
-        local PATH="$val"
+        local MOUNT_PATH="$val"
         ;;
       esac
       ;;
@@ -35,15 +37,10 @@ cmd-scheduler-kubernetes-mount() {
   done
   [[ -z "$NAME" ]] && dokku_log_fail "Please specify a volume name"
   [[ -z "$CLAIM_NAME" ]] && dokku_log_fail "Please specify a PVC claim name"
-  [[ -z "$PATH" ]] && dokku_log_fail "Please specify a mount path"
+  [[ -z "$MOUNT_PATH" ]] && dokku_log_fail "Please specify a mount path"
 
-  dokku_log_info2_quiet "Setting Volume Name to ${NAME}"
-  fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "volumes" "$NAME"
-  dokku_log_info2_quiet "Setting Claim Name  to ${CLAIM_NAME} using Volume  ${NAME}"
-  fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "claim" "$NAME" "$CLAIM_NAME"
-  dokku_log_info2_quiet "Setting Path to ${PATH} using Volume  ${NAME}"
-  fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "path" "$NAME" "$PATH"
-
+  dokku_log_info2_quiet "Setting Volume Name, Claim and Path to ${NAME}:$CLAIM_NAME:$MOUNT_PATH"
+  fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "volumes" "$NAME:$CLAIM_NAME:$MOUNT_PATH"
 }
 
 cmd-scheduler-kubernetes-mount "$@"
