@@ -683,6 +683,34 @@ fn-scheduler-kubernetes-add-pvc() {
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
 }
 
+fn-scheduler-kubernetes-list-pvc() {
+  declare desc="list persistent volume claims per namesapce"
+  declare NAMESPACE="$1"
+
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
+  KUBE_ARGS=()
+  if [[ -n "$NAMESPACE" ]]; then
+    KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fi
+
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" get pvc
+}
+
+fn-scheduler-kubernetes-remove-pvc() {
+  declare desc="remove persistent volume claim from namesapce"
+  declare NAME="$1" NAMESPACE="$1"
+
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
+  KUBE_ARGS=()
+  if [[ -n "$NAMESPACE" ]]; then
+    KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fi
+
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete pvc "$NAME"
+}
+
 fn-set-mount() {
   declare desc="mount volumes on path"
   declare APP="$1" DEPLOYMENT_FILE="$2"

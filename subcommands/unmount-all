@@ -13,7 +13,7 @@ cmd-scheduler-kubernetes-unmount-all() {
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an App name"
   verify_app_name "$APP"
 
-  dokku_log_info2_quiet "unmounting all volumes from app (Re-Deploy Required) "
+  dokku_log_info2_quiet "unmounting all volumes from app (Re-deploy Required) "
   fn-plugin-property-delete "scheduler-kubernetes" "$APP" "volumes"
 }
 
