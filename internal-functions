@@ -699,7 +699,7 @@ cmd-scheduler-kubernetes-list-pvc() {
 
 fn-scheduler-kubernetes-remove-pvc() {
   declare desc="remove persistent volume claim from namesapce"
-  declare NAME="$1" NAMESPACE="$1"
+  declare NAME="$1" NAMESPACE="$2"
 
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
   export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
