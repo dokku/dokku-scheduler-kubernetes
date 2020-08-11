@@ -481,8 +481,8 @@ fn-set-healthchecks() {
   sigil -f "$APP_JSON_TMPL" "${SIGIL_PARAMS[@]}" | cat -s >$APP_JSON_FILE
 
   for PROBE_TYPE in liveness readiness; do
-    if jq -e -M ".healthchecks.\"$PROC_TYPE\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE" ||
-      jq -e -M ".healthchecks.\"*\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE"; then
+    if jq -e -M ".healthchecks.\"$PROC_TYPE\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE" \
+      || jq -e -M ".healthchecks.\"*\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE"; then
       jq -M --argjson data "$(cat "$PROBE_FILE")" ".spec.template.spec.containers[0].${PROBE_TYPE}Probe += \$data" <"$DEPLOYMENT_FILE" >"$DEPLOYMENT_TMP_FILE"
       mv "$DEPLOYMENT_TMP_FILE" "$DEPLOYMENT_FILE"
     fi
