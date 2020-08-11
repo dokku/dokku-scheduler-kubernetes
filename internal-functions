@@ -481,8 +481,8 @@ fn-set-healthchecks() {
   sigil -f "$APP_JSON_TMPL" "${SIGIL_PARAMS[@]}" | cat -s >$APP_JSON_FILE
 
   for PROBE_TYPE in liveness readiness; do
-    if jq -e -M ".healthchecks.\"$PROC_TYPE\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE" \
-      || jq -e -M ".healthchecks.\"*\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE"; then
+    if jq -e -M ".healthchecks.\"$PROC_TYPE\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE" ||
+      jq -e -M ".healthchecks.\"*\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE"; then
       jq -M --argjson data "$(cat "$PROBE_FILE")" ".spec.template.spec.containers[0].${PROBE_TYPE}Probe += \$data" <"$DEPLOYMENT_FILE" >"$DEPLOYMENT_TMP_FILE"
       mv "$DEPLOYMENT_TMP_FILE" "$DEPLOYMENT_FILE"
     fi
@@ -719,32 +719,24 @@ fn-set-mount() {
   if [[ "$VOLUME_COUNT" == 0 ]]; then
     return
   fi
-  VOLUMES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "volumes")"
-  for VOLUME in ${VOLUMES[@]}; do
-    fn-mount-volumes "$VOLUME" "$DEPLOYMENT_FILE"
-  done
-}
-
-fn-mount-volumes() {
-
-  declare VOLUME_ENTRY="$1" DEPLOYMENT_FILE="$2"
-
-  local NAME=$(echo "$VOLUME_ENTRY" | cut -d':' -f1)
-  local CLAIM=$(echo "$VOLUME_ENTRY" | cut -d':' -f2)
-  local MOUNT_PATH=$(echo "$VOLUME_ENTRY" | cut -d':' -f3)
-
   local VOLUMES_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/volumes.json.sigil"
   local VOLUME_MOUNTS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/volume-mounts.json.sigil"
 
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
-  local SIGIL_PARAMS=(VOLUME_NAME="$NAME" CLAIM_NAME="$CLAIM")
-  jq --argjson volume "$(sigil -f "$VOLUMES_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.volumes += [$volume]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
-  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  VOLUMES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "volumes")"
+  for VOLUME_ENTRY in ${VOLUMES[@]}; do
+    local NAME=$(echo "$VOLUME_ENTRY" | cut -d':' -f1)
+    local CLAIM=$(echo "$VOLUME_ENTRY" | cut -d':' -f2)
+    local MOUNT_PATH=$(echo "$VOLUME_ENTRY" | cut -d':' -f3)
 
-  local SIGIL_PARAMS=(VOLUME_NAME="$NAME" MOUNT_PATH="$MOUNT_PATH")
-  jq --argjson mount "$(sigil -f "$VOLUME_MOUNTS_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.containers[0].volumeMounts += [$mount]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
-  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+    local SIGIL_PARAMS=(VOLUME_NAME="$NAME" CLAIM_NAME="$CLAIM")
+    jq --argjson volume "$(sigil -f "$VOLUMES_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.volumes += [$volume]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 
+    local SIGIL_PARAMS=(VOLUME_NAME="$NAME" MOUNT_PATH="$MOUNT_PATH")
+    jq --argjson mount "$(sigil -f "$VOLUME_MOUNTS_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.containers[0].volumeMounts += [$mount]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  done
 }
