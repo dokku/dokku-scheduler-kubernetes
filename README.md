@@ -246,6 +246,63 @@ Autoscaling rules are applied automatically during the next deploy, though may b
 ```shell
 dokku scheduler-kubernetes:autoscale-rule-apply $APP PROC_TYPE
 ```
+### Persistent Volume Claims (pvc) 
+
+Pods use pvcs as volumes.  For volumes that support multiple access modes, the user specifies which mode is desired when using their claim as a volume in a Pod. [See supported access modes by providers](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes)
+
+```shell
+# create a pvc
+dokku scheduler-kubernetes:add-pvc --name $NAME --access-mode $MODE --storage "100" --ns $NAMESPACE [--storage-class-name $CLASS]
+```
+
+Fields:
+    - `$NAME`: The name of the persistent volume clain
+    - `$MODE`: Access mode must be either of ReadWriteOnce, ReadOnlyMany or ReadWriteMany
+    - `--storage` takes a number and its in MB.
+    - `$NAMESPACE` : The namespace for the pvc.
+    - `$CLASS`: The storage class name.
+
+```shell
+# list pvcs
+dokku scheduler-kubernetes:list-pvc [$NAMESPACE]
+```
+
+```shell
+# delete pvc
+dokku scheduler-kubernetes:remove-pvc --name $NAME --ns $NAMESPACE
+```
+
+#### Mounting a volume using PVC
+Pods access storage by using the claim as a volume.
+
+```shell
+# mounting a volume (requires a re-deploy to take effect)
+dokku scheduler-kubernetes:mount $APP_NAME --name $VOLUME_NAME --claim-name $PVC_NAME --path /container/path
+```
+
+Fields:
+    - `$APP_NAME`: The name of the app
+    - `$VOLUME_NAME`: The name given to mounted volume
+    - `$PVC_NAME`: Name of persistent volume claim. Claims must exist in the same namespace as the app.
+	- `--path` will accept the container-dir to be mounted
+
+List mounted volumes for an app:	
+```shell
+# list mounted volumes
+dokku scheduler-kubernetes:list-mount $APP_NAME
+```
+
+Unmount a volume:	
+```shell
+# unmount a volume (requires a re-deploy to take effect)
+dokku scheduler-kubernetes:unmount $APP_NAME --name $VOLUME_NAME --path /container/path --claim-name $PVC_NAME
+```
+
+Unmount all volumes:
+```shell
+# unmount all (requires a re-deploy to take effect)
+dokku scheduler-kubernetes:unmount-all $APP_NAME
+```
 
 ### Kubernetes Manifests
 
