@@ -325,6 +325,22 @@ dokku scheduler-kubernetes:service-annotations-set node-js-sample pod.kubernetes
 
 Currently, they are applied to the `web` process, which is the only process for which a Kubernetes Service is created.
 
+#### Ingress Annotations
+
+These can be managed by the `:ingress-annotations-set` command.
+
+```shell
+# command structure
+dokku scheduler-kubernetes:ingress-annotations-set $APP name value
+
+# set example
+dokku scheduler-kubernetes:ingress-annotations-set node-js-sample nginx.ingress.kubernetes.io/affinity cookie
+
+# unset example, leave the value empty
+dokku scheduler-kubernetes:ingress-annotations-set node-js-sample nginx.ingress.kubernetes.io/affinity
+```
+
+Currently, these apply to all pods within an namespace.
 ### Rolling Updates
 
 For deployments that use a `rollingUpdate` for rollouts, a `rollingUpdate` may be triggered at a later date via the `:rolling-update` command.

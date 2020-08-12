@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-scheduler-kubernetes-ingress-annotations-set() {
+  declare desc="set or clear a scheduler-kubernetes ingress annotation for an app"
+  declare cmd="scheduler-kubernetes:ingress-annotations-set" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare APP="$1" KEY="$2" VALUE="$3"
+  [[ -z "$APP" ]] && dokku_log_fail "Please specify an app to run the command on"
+  [[ -z "$KEY" ]] && dokku_log_fail "No key specified"
+
+  verify_app_name "$APP"
+  if [[ -n "$VALUE" ]]; then
+    dokku_log_info2_quiet "Setting ${KEY} to ${VALUE}"
+    fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "ingress-annotations" "$KEY $VALUE"
+  else
+    dokku_log_info2_quiet "Unsetting ${KEY}"
+    fn-plugin-property-list-remove-by-prefix "scheduler-kubernetes" "$APP" "ingress-annotations" "$KEY"
+  fi
+}
+
+cmd-scheduler-kubernetes-ingress-annotations-set "$@"
