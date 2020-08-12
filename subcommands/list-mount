@@ -13,7 +13,7 @@ cmd-scheduler-kubernetes-list-mount() {
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an App name"
   verify_app_name "$APP"
 
-  dokku_log_info2_quiet "Listing Mounts as Volume-Name:Claim-Name:Path"
+  dokku_log_info2_quiet "Listing Mounts as Claim-Name:Path"
   VOLUMES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "volumes")"
   for VOLUME in ${VOLUMES[@]}; do
     echo "$VOLUME"
