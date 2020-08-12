@@ -9,7 +9,7 @@ cmd-scheduler-kubernetes-remove-pvc() {
   declare desc="remove a persistent volume claim"
   declare cmd="scheduler-kubernetes:remove-pvc" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare NAME="$1" shift 1
+  declare NAME="$1" && shift 1
   [[ -z "$NAME" ]] && dokku_log_fail "Please specify a name for PVC"
   while getopts ":-:" opt "$@"; do
     case "$opt" in
