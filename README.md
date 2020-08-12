@@ -252,15 +252,15 @@ Pods use pvcs as volumes.  For volumes that support multiple access modes, the u
 
 ```shell
 # create a pvc
-dokku scheduler-kubernetes:add-pvc --name $NAME --access-mode $MODE --storage "100" --ns $NAMESPACE [--storage-class-name $CLASS]
+dokku scheduler-kubernetes:add-pvc $NAME "$STORAGE" [--access-mode $MODE][--namespace $NAMESPACE ][--storage-class-name $CLASS]
 ```
 
 Fields:
     - `$NAME`: The name of the persistent volume clain
-    - `$MODE`: Access mode must be either of ReadWriteOnce, ReadOnlyMany or ReadWriteMany
-    - `--storage` takes a number and its in MB.
-    - `$NAMESPACE` : The namespace for the pvc.
-    - `$CLASS`: The storage class name.
+    - `$STORAGE` is a numeric size of claim in MB.
+    - `$MODE`: Access mode must be either of ReadWriteOnce, ReadOnlyMany or ReadWriteMany. Default is ReadWriteOnce
+    - `$NAMESPACE` : The namespace for the pvc. Default is "default"
+    - `$CLASS`: The storage class name. Default is ""
 
 ```shell
 # list pvcs
@@ -269,7 +269,7 @@ dokku scheduler-kubernetes:list-pvc [$NAMESPACE]
 
 ```shell
 # delete pvc
-dokku scheduler-kubernetes:remove-pvc --name $NAME --ns $NAMESPACE
+dokku scheduler-kubernetes:remove-pvc $NAME --namespace $NAMESPACE
 ```
 
 #### Mounting a volume using PVC
@@ -277,14 +277,12 @@ Pods access storage by using the claim as a volume.
 
 ```shell
 # mounting a volume (requires a re-deploy to take effect)
-dokku scheduler-kubernetes:mount $APP_NAME --name $VOLUME_NAME --claim-name $PVC_NAME --path /container/path
+dokku scheduler-kubernetes:mount $APP_NAME $PVC_NAME /container/path
 ```
 
 Fields:
     - `$APP_NAME`: The name of the app
-    - `$VOLUME_NAME`: The name given to mounted volume
-    - `$PVC_NAME`: Name of persistent volume claim. Claims must exist in the same namespace as the app.
-	- `--path` will accept the container-dir to be mounted
+    - `$PVC_NAME`: Name of persistent volume claim. Will be used as volume name. Claims must exist in the same namespace as the app.
 
 List mounted volumes for an app:	
 ```shell
@@ -295,7 +293,7 @@ dokku scheduler-kubernetes:list-mount $APP_NAME
 Unmount a volume:	
 ```shell
 # unmount a volume (requires a re-deploy to take effect)
-dokku scheduler-kubernetes:unmount $APP_NAME --name $VOLUME_NAME --path /container/path --claim-name $PVC_NAME
+dokku scheduler-kubernetes:unmount $APP_NAME $PVC_NAME /container/path
 ```
 
 Unmount all volumes:

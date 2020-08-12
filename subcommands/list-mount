@@ -9,7 +9,7 @@ cmd-scheduler-kubernetes-list-mount() {
   declare desc="list mounted a volumes"
   declare cmd="scheduler-kubernetes:list-mount" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare APP="$1" && shift 1
+  declare APP="$1"
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an App name"
   verify_app_name "$APP"
 

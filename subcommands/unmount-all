@@ -9,7 +9,7 @@ cmd-scheduler-kubernetes-unmount-all() {
   declare desc="unmount all volumes"
   declare cmd="scheduler-kubernetes:unmount-all" argv=("$@")
   [[ ${argv[0]} == "$cmd" ]] && shift 1
-  declare APP="$1" && shift 1
+  declare APP="$1"
   [[ -z "$APP" ]] && dokku_log_fail "Please specify an App name"
   verify_app_name "$APP"
 
