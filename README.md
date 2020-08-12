@@ -256,7 +256,7 @@ dokku scheduler-kubernetes:add-pvc $NAME "$STORAGE" [--access-mode $MODE][--name
 ```
 
 Fields:
-    - `$NAME`: The name of the persistent volume clain
+    - `$NAME`: The name of the persistent volume claim
     - `$STORAGE` is a numeric size of claim in MB.
     - `$MODE`: Access mode must be either of ReadWriteOnce, ReadOnlyMany or ReadWriteMany. Default is ReadWriteOnce
     - `$NAMESPACE` : The namespace for the pvc. Default is "default"
