@@ -252,15 +252,15 @@ Pods use pvcs as volumes.  For volumes that support multiple access modes, the u
 
 ```shell
 # create a pvc
-dokku scheduler-kubernetes:add-pvc $NAME "$STORAGE" [--access-mode $MODE][--namespace $NAMESPACE ][--storage-class-name $CLASS]
+dokku scheduler-kubernetes:add-pvc $NAME $SIZE [--access-mode $MODE][--namespace $NAMESPACE ][--storage-class-name $CLASS]
 ```
 
 Fields:
     - `$NAME`: The name of the persistent volume claim
-    - `$STORAGE` is a numeric size of claim in MB.
+    - `$SIZE` is a numeric size of claim in MB.
     - `$MODE`: Access mode must be either of ReadWriteOnce, ReadOnlyMany or ReadWriteMany. Default is ReadWriteOnce
     - `$NAMESPACE` : The namespace for the pvc. Default is "default"
-    - `$CLASS`: The storage class name. Default is ""
+    - `$CLASS`: The storage class name. Default is k8s providers default storage class
 
 ```shell
 # list pvcs

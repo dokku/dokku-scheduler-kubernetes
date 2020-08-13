@@ -677,10 +677,13 @@ fn-scheduler-kubernetes-add-pvc() {
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
-  SIGIL_PARAMS=(NAME="$NAME" ACCESS_MODE="$ACCESS_MODE" STORAGE="$STORAGE" STORAGE_CLASS_NAME="$STORAGE_CLASS_NAME")
-  sigil -f "$PVC_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
-
-  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
+  if [[ "$STORAGE_CLASS_NAME" != "" ]]; then
+    STORAGE_CLASS_NAME="$STORAGE_CLASS_NAME" jq -M '.spec.storageClassName = env.STORAGE_CLASS_NAME' <"$PVC_TEMPLATE" >"$TMP_FILE"
+  else
+    cp "$PVC_TEMPLATE" "$TMP_FILE"
+  fi
+  SIGIL_PARAMS=(NAME="$NAME" ACCESS_MODE="$ACCESS_MODE" STORAGE="$STORAGE")
+  sigil -f "$TMP_FILE" "${SIGIL_PARAMS[@]}" |  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f - | sed "s/^/       /"
 }
 
 cmd-scheduler-kubernetes-list-pvc() {
