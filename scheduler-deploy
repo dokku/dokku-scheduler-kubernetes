@@ -36,6 +36,8 @@ scheduler-kubernetes-scheduler-deploy() {
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  else
+    KUBE_ARGS+=("--namespace=default")
   fi
 
   local IMAGE_PULL_SECRETS="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "imagePullSecrets" "")"

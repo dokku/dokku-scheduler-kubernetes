@@ -27,6 +27,8 @@ scheduler-kubernetes-scheduler-logs() {
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  else
+    KUBE_ARGS+=("--namespace=default")
   fi
 
   local LOGS_ARGS="--tail $NUM"

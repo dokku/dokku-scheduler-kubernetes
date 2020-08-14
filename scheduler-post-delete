@@ -22,6 +22,8 @@ scheduler-kubernetes-scheduler-post-delete() {
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  else
+    KUBE_ARGS+=("--namespace=default")
   fi
 
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete deployments,hpa,pdb,pods,services -l app="$APP"

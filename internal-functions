@@ -32,6 +32,8 @@ cmd-scheduler-kubernetes-rolling-update() {
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  else
+    KUBE_ARGS+=("--namespace=default")
   fi
 
   dokku_log_info1 "Triggering rolling-update for $APP"
@@ -202,6 +204,8 @@ fn-scheduler-kubernetes-autoscale-apply() {
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  else
+    KUBE_ARGS+=("--namespace=default")
   fi
 
   RULES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE")"
@@ -397,6 +401,8 @@ fn-scheduler-kubernetes-ingress-build-config() {
   if [[ -n "$APP_NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$APP_NAMESPACE")
     fn-scheduler-kubernetes-ensure-namespace "$APP_NAMESPACE" >/dev/null
+  else
+    KUBE_ARGS+=("--namespace=default")
   fi
 
   local SCHEME=http
@@ -549,6 +555,8 @@ fn-set-pod-disruption-constraints() {
   if [[ -n "$NAMESPACE" ]]; then
     KUBE_ARGS+=("--namespace=$NAMESPACE")
     fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  else
+    KUBE_ARGS+=("--namespace=default")
   fi
 
   local SIGIL_PARAMS=(APP="$APP")
