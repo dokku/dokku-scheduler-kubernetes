@@ -405,7 +405,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
     fn-scheduler-kubernetes-add-cert-manager "$TMP_FILE" "${CERT_MANAGER_DOMAINS[@]}"
   fi
 
-  fn-set-ingress-annotations "$APP" "$TMP_FILE"
+  fn-set-ingress-annotations "$APP_NAMESPACE" "$TMP_FILE"
   plugn trigger pre-kubernetes-ingress-apply "$APP" "$TMP_FILE"
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
 
@@ -641,11 +641,11 @@ fn-strip-ports() {
 }
 
 fn-set-ingress-annotations() {
-  declare APP="$1" INGRESS_FILE="$2"
+  declare APP_NAMESPACE="$1" INGRESS_FILE="$2"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
-  ANNOTATION_COUNT="$(fn-plugin-property-list-length "scheduler-kubernetes" "$APP" "ingress-annotations")"
+  ANNOTATION_COUNT="$(fn-plugin-property-list-length "scheduler-kubernetes" "$APP_NAMESPACE" "ingress-annotations")"
   if [[ "$ANNOTATION_COUNT" == 0 ]]; then
     return
   fi
@@ -658,5 +658,5 @@ fn-set-ingress-annotations() {
     local VALUE="$(echo "$p" | cut -d' ' -f2)"
     KEY="$KEY" VALUE="$VALUE" jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$INGRESS_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$INGRESS_FILE"
-  done < <(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "ingress-annotations")
+  done < <(fn-plugin-property-list-get "scheduler-kubernetes" "$APP_NAMESPACE" "ingress-annotations")
 }
