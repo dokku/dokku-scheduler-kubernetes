@@ -23,13 +23,9 @@ scheduler-kubernetes-scheduler-stop() {
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
   export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
   KUBE_ARGS=()
-  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
-  if [[ -n "$NAMESPACE" ]]; then
-    KUBE_ARGS+=("--namespace=$NAMESPACE")
-    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
-  else
-    KUBE_ARGS+=("--namespace=default")
-  fi
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "default")"
+  KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
 
   while read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ ^#.* ]] && continue
