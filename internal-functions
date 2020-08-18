@@ -126,6 +126,13 @@ scheduler_docker_local_help_content_func() {
     scheduler-kubernetes:service-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes service annotation for an app
     scheduler-kubernetes:set <app> <property> (<value>), Set or clear a scheduler-kubernetes property for an app
     scheduler-kubernetes:show-manifest <app> <proc_type> (<manifest_type>), Display the deployment or service manifest for a given app/process type combination
+    scheduler-kubernetes:add-pvc <name> <size> --access-mode <mode> --namespace <namespace> --storage-class-name <class-name>, Adds a Persistent Volume Claim (PVC)
+    scheduler-kubernetes:remove-pvc <name> --namespace <namespace>, Remove Persistent Volume Claim in Namespace
+    scheduler-kubernetes:list-pvc (<namespace>), Display Persistent Volume Claims by Namespace
+    scheduler-kubernetes:mount <app> <pvc_name> </container/path>, Mount a Volume to Container Path for an app
+    scheduler-kubernetes:unmount <app> <pvc_name> </container/path>, Unmount a Volume from an app
+    scheduler-kubernetes:unmount-all <app>, Unmount all Volumes from an app
+    scheduler-kubernetes:list-mount <app>, List Mounted Volumes for an app
 help_content
 }
 
