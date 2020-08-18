@@ -120,6 +120,7 @@ scheduler_docker_local_help_content_func() {
     scheduler-kubernetes:autoscale-set <app> <proc_type> <key> <value>, Set or clear autoscale settings for an app/proc-type combination
     scheduler-kubernetes:deployment-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes deployment annotation for an app
     scheduler-kubernetes:pod-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes pod annotation for an app
+    scheduler-kubernetes:ingress-annotations-set <namespace> <key> (<value>), Set or clear a scheduler-kubernetes ingress annotation for a namespace
     scheduler-kubernetes:report [<app>] [<flag>], Displays a scheduler-kubernetes report for one or more apps
     scheduler-kubernetes:rolling-update <app>, Force a rolling update
     scheduler-kubernetes:service-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes service annotation for an app
