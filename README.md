@@ -40,15 +40,15 @@ The following functionality has been implemented
 Unsupported at this time:
 
 - Custom docker-options (not applicable)
-- Deployment timeouts (planned: #30)
-- Dockerfile support (planned: #29)
-- Encrypted environment variables (planned: #9)
-- Proxy port integration (planned: #29)
-- Manual SSL Certificates (planned: #28)
+- Deployment timeouts (planned: [#30](https://github.com/dokku/dokku-scheduler-kubernetes/issues/30))
+- Dockerfile support (planned: [#29](https://github.com/dokku/dokku-scheduler-kubernetes/issues/29))
+- Encrypted environment variables (planned: [#9](https://github.com/dokku/dokku-scheduler-kubernetes/issues/9))
+- Proxy port integration (planned: [#29](https://github.com/dokku/dokku-scheduler-kubernetes/issues/29))
+- Manual SSL Certificates (planned: [#28](https://github.com/dokku/dokku-scheduler-kubernetes/issues/28))
 - The following scheduler commands are unimplemented:
-  - `enter` (planned: #12)
+  - `enter` (planned: [#12](https://github.com/dokku/dokku-scheduler-kubernetes/issues/12))
   - `logs:failed`
-  - `run` (planned: #12)
+  - `run` (planned: [#12](https://github.com/dokku/dokku-scheduler-kubernetes/issues/12))
 
 > If this plugin is missing a feature you need, consider [sponsoring development](https://github.com/dokku/.github/blob/master/SPONSORING.md). Pull requests always welcome!
 
