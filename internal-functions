@@ -28,11 +28,9 @@ cmd-scheduler-kubernetes-rolling-update() {
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
   export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
   KUBE_ARGS=()
-  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
-  if [[ -n "$NAMESPACE" ]]; then
-    KUBE_ARGS+=("--namespace=$NAMESPACE")
-    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
-  fi
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "default")"
+  KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
 
   dokku_log_info1 "Triggering rolling-update for $APP"
   while read -r line || [[ -n "$line" ]]; do
@@ -199,11 +197,9 @@ fn-scheduler-kubernetes-autoscale-apply() {
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
   export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
   KUBE_ARGS=()
-  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
-  if [[ -n "$NAMESPACE" ]]; then
-    KUBE_ARGS+=("--namespace=$NAMESPACE")
-    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
-  fi
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "default")"
+  KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
 
   RULES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "autoscale.$PROC_TYPE")"
   if [[ -z "$RULES" ]]; then
@@ -341,7 +337,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
   fi
 
   local HAS_RULE=false
-  local APP_NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
+  local APP_NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "default")"
   local INGRESS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress.json.sigil"
 
   local SIGIL_PARAMS=()
@@ -350,7 +346,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
   for app in $(dokku_apps); do
     local DOKKU_SCALE_FILE="$DOKKU_ROOT/$app/DOKKU_SCALE"
     local DOKKU_VHOST_FILE="$DOKKU_ROOT/$app/VHOST"
-    local namespace="$(fn-plugin-property-get "scheduler-kubernetes" "$app" "namespace" "")"
+    local namespace="$(fn-plugin-property-get "scheduler-kubernetes" "$app" "namespace" "default")"
     local cert_manager_enabled="$(fn-plugin-property-get "scheduler-kubernetes" "$app" "cert-manager-enabled" "")"
 
     if [[ "$APP_NAMESPACE" != "$namespace" ]]; then
@@ -395,10 +391,8 @@ fn-scheduler-kubernetes-ingress-build-config() {
   fi
 
   local KUBE_ARGS=()
-  if [[ -n "$APP_NAMESPACE" ]]; then
-    KUBE_ARGS+=("--namespace=$APP_NAMESPACE")
-    fn-scheduler-kubernetes-ensure-namespace "$APP_NAMESPACE" >/dev/null
-  fi
+  KUBE_ARGS+=("--namespace=$APP_NAMESPACE")
+  fn-scheduler-kubernetes-ensure-namespace "$APP_NAMESPACE" >/dev/null
 
   local SCHEME=http
   if [[ -n "$CERT_MANAGER_EMAIL" ]] && [[ -n "$CERT_MANAGER_DOMAINS" ]]; then
@@ -420,6 +414,9 @@ fn-scheduler-kubernetes-ingress-build-config() {
 
 fn-scheduler-kubernetes-ensure-namespace() {
   declare NAMESPACE="$1"
+  if [[  "$NAMESPACE" = "default" ]]; then
+    return
+  fi
   local NAMESPACE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/namespace.json.sigil"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
@@ -547,11 +544,9 @@ fn-set-pod-disruption-constraints() {
 
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
   KUBE_ARGS=()
-  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
-  if [[ -n "$NAMESPACE" ]]; then
-    KUBE_ARGS+=("--namespace=$NAMESPACE")
-    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
-  fi
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "default")"
+  KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
 
   local SIGIL_PARAMS=(APP="$APP")
   sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$POD_TMP_FILE
