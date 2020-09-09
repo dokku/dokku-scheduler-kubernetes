@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-scheduler-kubernetes-unmount() {
+  declare desc="unmount a volume"
+  declare cmd="scheduler-kubernetes:unmount" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare APP="$1" && CLAIM_NAME="$2" && MOUNT_PATH="$3"
+  [[ -z "$APP" ]] && dokku_log_fail "Please specify an App name"
+  verify_app_name "$APP"
+  [[ -z "$CLAIM_NAME" ]] && dokku_log_fail "Please specify a PVC claim name"
+  [[ -z "$MOUNT_PATH" ]] && dokku_log_fail "Please specify a mount path"
+  
+  dokku_log_info2_quiet "Removing Claim Name and Path $CLAIM_NAME:$MOUNT_PATH (Re-deploy Required) "
+  fn-plugin-property-list-remove "scheduler-kubernetes" "$APP" "volumes" "$CLAIM_NAME:$MOUNT_PATH"
+}
+
+cmd-scheduler-kubernetes-unmount "$@"

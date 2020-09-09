@@ -124,6 +124,13 @@ scheduler_docker_local_help_content_func() {
     scheduler-kubernetes:service-annotations-set <app> <key> <value>, Set or clear a scheduler-kubernetes service annotation for an app
     scheduler-kubernetes:set <app> <property> (<value>), Set or clear a scheduler-kubernetes property for an app
     scheduler-kubernetes:show-manifest <app> <proc_type> (<manifest_type>), Display the deployment or service manifest for a given app/process type combination
+    scheduler-kubernetes:add-pvc <name> <size> --access-mode <mode> --namespace <namespace> --storage-class-name <class-name>, Adds a Persistent Volume Claim (PVC)
+    scheduler-kubernetes:remove-pvc <name> --namespace <namespace>, Remove Persistent Volume Claim in Namespace
+    scheduler-kubernetes:list-pvc (<namespace>), Display Persistent Volume Claims by Namespace
+    scheduler-kubernetes:mount <app> <pvc_name> </container/path>, Mount a Volume to Container Path for an app
+    scheduler-kubernetes:unmount <app> <pvc_name> </container/path>, Unmount a Volume from an app
+    scheduler-kubernetes:unmount-all <app>, Unmount all Volumes from an app
+    scheduler-kubernetes:list-mount <app>, List Mounted Volumes for an app
 help_content
 }
 
@@ -655,4 +662,85 @@ fn-set-ingress-annotations() {
     KEY="$KEY" VALUE="$VALUE" jq -M '.metadata.annotations[env.KEY] = env.VALUE' <"$INGRESS_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$INGRESS_FILE"
   done < <(fn-plugin-property-list-get "scheduler-kubernetes" "$APP_NAMESPACE" "ingress-annotations")
+
+fn-scheduler-kubernetes-add-pvc() {
+  declare desc="add persistent volume claim"
+  declare NAME="$1" ACCESS_MODE="$2" STORAGE="$3" STORAGE_CLASS_NAME="$4" NAMESPACE="$5"
+
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
+  KUBE_ARGS=()
+  if [[ -n "$NAMESPACE" ]]; then
+    KUBE_ARGS+=("--namespace=$NAMESPACE")
+    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
+  fi
+
+  local PVC_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/pvc.json.sigil"
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  if [[ "$STORAGE_CLASS_NAME" != "" ]]; then
+    STORAGE_CLASS_NAME="$STORAGE_CLASS_NAME" jq -M '.spec.storageClassName = env.STORAGE_CLASS_NAME' <"$PVC_TEMPLATE" >"$TMP_FILE"
+  else
+    cp "$PVC_TEMPLATE" "$TMP_FILE"
+  fi
+  SIGIL_PARAMS=(NAME="$NAME" ACCESS_MODE="$ACCESS_MODE" STORAGE="$STORAGE")
+  sigil -f "$TMP_FILE" "${SIGIL_PARAMS[@]}" |  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f - | sed "s/^/       /"
+}
+
+cmd-scheduler-kubernetes-list-pvc() {
+  declare desc="list persistent volume claims per namesapce"
+  declare NAMESPACE="$1"
+
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
+  KUBE_ARGS=()
+  if [[ -n "$NAMESPACE" ]]; then
+    KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fi
+
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" get pvc
+}
+
+fn-scheduler-kubernetes-remove-pvc() {
+  declare desc="remove persistent volume claim from namesapce"
+  declare NAME="$1" NAMESPACE="$2"
+
+  export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
+  export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
+  KUBE_ARGS=()
+  if [[ -n "$NAMESPACE" ]]; then
+    KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fi
+
+  "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete pvc "$NAME"
+}
+
+fn-set-mount() {
+  declare desc="mount volumes on path"
+  declare APP="$1" DEPLOYMENT_FILE="$2"
+
+  VOLUME_COUNT="$(fn-plugin-property-list-length "scheduler-kubernetes" "$APP" "volumes")"
+  if [[ "$VOLUME_COUNT" == 0 ]]; then
+    return
+  fi
+  local VOLUMES_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/volumes.json.sigil"
+  local VOLUME_MOUNTS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/volume-mounts.json.sigil"
+
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  VOLUMES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "volumes")"
+  for VOLUME_ENTRY in ${VOLUMES[@]}; do
+    local CLAIM_NAME=$(echo "$VOLUME_ENTRY" | cut -d':' -f1)
+    local MOUNT_PATH=$(echo "$VOLUME_ENTRY" | cut -d':' -f2)
+
+    local SIGIL_PARAMS=(VOLUME_NAME="$CLAIM_NAME" CLAIM_NAME="$CLAIM_NAME")
+    jq --argjson volume "$(sigil -f "$VOLUMES_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.volumes += [$volume]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+
+    local SIGIL_PARAMS=(VOLUME_NAME="$CLAIM_NAME" MOUNT_PATH="$MOUNT_PATH")
+    jq --argjson mount "$(sigil -f "$VOLUME_MOUNTS_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.containers[0].volumeMounts += [$mount]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  done
 }

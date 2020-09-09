@@ -246,6 +246,61 @@ Autoscaling rules are applied automatically during the next deploy, though may b
 ```shell
 dokku scheduler-kubernetes:autoscale-rule-apply $APP PROC_TYPE
 ```
+### Persistent Volume Claims (pvc) 
+
+Pods use pvcs as volumes.  For volumes that support multiple access modes, the user specifies which mode is desired when using their claim as a volume in a Pod. [See supported access modes by providers](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes)
+
+```shell
+# create a pvc
+dokku scheduler-kubernetes:add-pvc $NAME $SIZE [--access-mode $MODE][--namespace $NAMESPACE ][--storage-class-name $CLASS]
+```
+
+Fields:
+    - `$NAME`: The name of the persistent volume claim
+    - `$SIZE` is a numeric size of claim in MB.
+    - `$MODE`: Access mode must be either of ReadWriteOnce, ReadOnlyMany or ReadWriteMany. Default is ReadWriteOnce
+    - `$NAMESPACE` : The namespace for the pvc. Default is "default"
+    - `$CLASS`: The storage class name. Default is k8s providers default storage class
+
+```shell
+# list pvcs
+dokku scheduler-kubernetes:list-pvc [$NAMESPACE]
+```
+
+```shell
+# delete pvc
+dokku scheduler-kubernetes:remove-pvc $NAME --namespace $NAMESPACE
+```
+
+#### Mounting a volume using PVC
+Pods access storage by using the claim as a volume.
+
+```shell
+# mounting a volume (requires a re-deploy to take effect)
+dokku scheduler-kubernetes:mount $APP_NAME $PVC_NAME /container/path
+```
+
+Fields:
+    - `$APP_NAME`: The name of the app
+    - `$PVC_NAME`: Name of persistent volume claim. Will be used as volume name. Claims must exist in the same namespace as the app.
+
+List mounted volumes for an app:	
+```shell
+# list mounted volumes
+dokku scheduler-kubernetes:list-mount $APP_NAME
+```
+
+Unmount a volume:	
+```shell
+# unmount a volume (requires a re-deploy to take effect)
+dokku scheduler-kubernetes:unmount $APP_NAME $PVC_NAME /container/path
+```
+
+Unmount all volumes:
+```shell
+# unmount all (requires a re-deploy to take effect)
+dokku scheduler-kubernetes:unmount-all $APP_NAME
+```
 
 ### Kubernetes Manifests
 

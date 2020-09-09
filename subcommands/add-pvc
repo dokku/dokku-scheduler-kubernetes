@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
+source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
+source "$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/internal-functions"
+set -eo pipefail
+[[ $DOKKU_TRACE ]] && set -x
+
+cmd-scheduler-kubernetes-add-pvc() {
+  declare desc="add a persistent volume claim"
+  declare cmd="scheduler-kubernetes:add-pvc" argv=("$@")
+  [[ ${argv[0]} == "$cmd" ]] && shift 1
+  declare NAME="$1" && STORAGE="$2" && shift 2
+  [[ -z "$NAME" ]] && dokku_log_fail "Please specify a name for PVC"
+  [[ -z "${STORAGE##*[!0-9]*}" ]] && dokku_log_fail "Please specify a numeric storage size for PVC"
+  while getopts ":-:" opt "$@"; do
+    case "$opt" in
+    -)
+      case "$OPTARG" in
+      access-mode)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local ACCESS_MODE="$val"
+        ;;
+      storage-class-name)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local STORAGE_CLASS_NAME="$val"
+        ;;
+      namespace)
+        val="${!OPTIND}"
+        OPTIND=$((OPTIND + 1))
+        local NAMESPACE="$val"
+        ;;
+      esac
+      ;;
+    esac
+  done
+  
+  [[ -z "$ACCESS_MODE" ]] && ACCESS_MODE="ReadWriteOnce"
+  [[ "$ACCESS_MODE" == ReadWriteOnce ]] || [[ "$ACCESS_MODE" == ReadWriteMany ]] || [[ "$ACCESS_MODE" == ReadOnlyMany ]] || dokku_log_fail "Please specify PVC access mode as either ReadWriteOnce, ReadOnlyMany,  ReadWriteMany"
+  [[ -z "$STORAGE_CLASS_NAME" ]] && STORAGE_CLASS_NAME=""
+  [[ -z "$NAMESPACE" ]] && NAMESPACE="default"
+
+  fn-scheduler-kubernetes-add-pvc "$NAME" "$ACCESS_MODE" "$STORAGE" "$STORAGE_CLASS_NAME" "$NAMESPACE"
+}
+
+cmd-scheduler-kubernetes-add-pvc "$@"
