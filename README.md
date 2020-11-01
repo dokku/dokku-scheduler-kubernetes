@@ -177,16 +177,16 @@ Pod Disruption Budgets will be updated on next deploy.
 
 > This feature requires an installed metric server, uses the `autoscaling/v2beta2` api, and will apply immediately. Only `resource` rules are supported when using the official metric-server, all others require the prometheus-operator and prometheus-adapter.
 
-By default, Kubernetes deployments are not set to autoscale, but a HorizontalPodAutoscaler object can be managed for an app on a per-process type basis. Using the HorizontalPodAutoscaler will disable the normal usage of `ps:scale` for the specified app/process-type combination, as per Kubernetes best practices.
+By default, Kubernetes deployments are not set to autoscale, but a HorizontalPodAutoscaler object can be managed for an app on a per-process type basis - referenced as `$PROC_TYPE` below. Using the HorizontalPodAutoscaler will disable the normal usage of `ps:scale` for the specified app/process-type combination, as per Kubernetes best practices.
 
 At a minimum, both a min/max number of replicas must be set.
 
 ```shell
 # set the min number of replicas
-dokku scheduler-kubernetes:autoscale-set $APP PROC_TYPE min-replicas 1
+dokku scheduler-kubernetes:autoscale-set $APP $PROC_TYPE min-replicas 1
 
 # set the max number of replicas
-dokku scheduler-kubernetes:autoscale-set $APP PROC_TYPE max-replicas 10
+dokku scheduler-kubernetes:autoscale-set $APP $PROC_TYPE max-replicas 10
 ```
 
 You also need to add autoscaling rules. These can be managed via the `:autoscale-rule-add` command. Adding a rule for a target-name/metric-type combination that already exists will override any existing rules.
@@ -222,29 +222,29 @@ Rules can be added for the following metric types:
 
 ```shell
 # set the cpu average utilization target
-dokku scheduler-kubernetes:autoscale-rule-add $APP PROC_TYPE resource:cpu:Utilization:50
+dokku scheduler-kubernetes:autoscale-rule-add $APP $PROC_TYPE resource:cpu:Utilization:50
 ```
 
 Rules can be listed via the `autoscale-rule-list` command:
 
 ```shell
-dokku scheduler-kubernetes:autoscale-rule-list $APP PROC_TYPE
+dokku scheduler-kubernetes:autoscale-rule-list $APP $PROC_TYPE
 ```
 
 Rules can be removed via the `:autoscale-rule-remove` command. This command takes the same arguments as the `autoscale-rule-add` command, though the value is optional. If a rule matching the specified arguments does not exist, the command will still return 0.
 
 ```shell
 # remove the cpu rule
-dokku scheduler-kubernetes:autoscale-rule-remove $APP PROC_TYPE resource:cpu:Utilization:50
+dokku scheduler-kubernetes:autoscale-rule-remove $APP $PROC_TYPE resource:cpu:Utilization:50
 
 # remove the cpu rule by prefix
-dokku scheduler-kubernetes:autoscale-rule-remove $APP PROC_TYPE resource:cpu:Utilization
+dokku scheduler-kubernetes:autoscale-rule-remove $APP $PROC_TYPE resource:cpu:Utilization
 ```
 
 Autoscaling rules are applied automatically during the next deploy, though may be immediately applied through the `:autoscale-apply` command:
 
 ```shell
-dokku scheduler-kubernetes:autoscale-apply $APP PROC_TYPE
+dokku scheduler-kubernetes:autoscale-apply $APP $PROC_TYPE
 ```
 ### Persistent Volume Claims (pvc) 
 
@@ -277,7 +277,7 @@ Pods access storage by using the claim as a volume.
 
 ```shell
 # mounting a volume (requires a re-deploy to take effect)
-dokku scheduler-kubernetes:mount $APP_NAME $PVC_NAME /container/path
+dokku scheduler-kubernetes:mount $APP_NAME $PVC_NAME $CONTAINER_PATH
 ```
 
 Fields:
@@ -293,7 +293,7 @@ dokku scheduler-kubernetes:list-mount $APP_NAME
 Unmount a volume:	
 ```shell
 # unmount a volume (requires a re-deploy to take effect)
-dokku scheduler-kubernetes:unmount $APP_NAME $PVC_NAME /container/path
+dokku scheduler-kubernetes:unmount $APP_NAME $PVC_NAME $CONTAINER_PATH
 ```
 
 Unmount all volumes:
@@ -310,7 +310,7 @@ The kubernetes manifest for a deployment or service can be displayed using the `
 
 ```shell
 # show the deployment manifest for the `web` process type
-dokku scheduler-kubernetes:show-manifest $APP PROC_TYPE MANIFEST_TYPE
+dokku scheduler-kubernetes:show-manifest $APP $PROC_TYPE $MANIFEST_TYPE
 ```
 
 This command can be used like so:
@@ -339,7 +339,7 @@ These can be managed by the `:deployment-annotations-set` command.
 
 ```shell
 # command structure
-dokku scheduler-kubernetes:deployment-annotations-set $APP name value
+dokku scheduler-kubernetes:deployment-annotations-set $APP $ANNOTATION_NAME $ANNOTATION_VALUE
 
 # set example
 dokku scheduler-kubernetes:deployment-annotations-set node-js-sample pod.kubernetes.io/lifetime 86400s
@@ -468,7 +468,7 @@ The following custom triggers are exposed by the plugin:
 
 - Description: Allows a user to interact with the `deployment` manifest after it has been submitted.
 - Invoked by:
-- Arguments: `$APP` `$PROC_TYPE` `$MANIFEST_FILE` `MANIFEST_TYPE`
+- Arguments: `$APP` `$PROC_TYPE` `$MANIFEST_FILE` `$MANIFEST_TYPE`
 - Example:
 
 ```shell
@@ -498,7 +498,7 @@ set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 
 - Description: Allows a user to interact with the `deployment|service` manifest before it has been submitted.
 - Invoked by: `scheduler-deploy` trigger and `:show-manifest`
-- Arguments: `$APP` `$PROC_TYPE` `$MANIFEST_FILE` `MANIFEST_TYPE`
+- Arguments: `$APP` `$PROC_TYPE` `$MANIFEST_FILE` `$MANIFEST_TYPE`
 - Example:
 
 ```shell
