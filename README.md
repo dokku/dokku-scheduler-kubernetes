@@ -241,10 +241,10 @@ dokku scheduler-kubernetes:autoscale-rule-remove $APP PROC_TYPE resource:cpu:Uti
 dokku scheduler-kubernetes:autoscale-rule-remove $APP PROC_TYPE resource:cpu:Utilization
 ```
 
-Autoscaling rules are applied automatically during the next deploy, though may be immediately applied through the `:autoscale-rule-apply` command:
+Autoscaling rules are applied automatically during the next deploy, though may be immediately applied through the `:autoscale-apply` command:
 
 ```shell
-dokku scheduler-kubernetes:autoscale-rule-apply $APP PROC_TYPE
+dokku scheduler-kubernetes:autoscale-apply $APP PROC_TYPE
 ```
 ### Persistent Volume Claims (pvc) 
 
