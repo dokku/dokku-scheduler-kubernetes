@@ -14,28 +14,28 @@ cmd-scheduler-kubernetes-add-pvc() {
   [[ -z "${STORAGE##*[!0-9]*}" ]] && dokku_log_fail "Please specify a numeric storage size for PVC"
   while getopts ":-:" opt "$@"; do
     case "$opt" in
-    -)
-      case "$OPTARG" in
-      access-mode)
-        val="${!OPTIND}"
-        OPTIND=$((OPTIND + 1))
-        local ACCESS_MODE="$val"
+      -)
+        case "$OPTARG" in
+          access-mode)
+            val="${!OPTIND}"
+            OPTIND=$((OPTIND + 1))
+            local ACCESS_MODE="$val"
+            ;;
+          storage-class-name)
+            val="${!OPTIND}"
+            OPTIND=$((OPTIND + 1))
+            local STORAGE_CLASS_NAME="$val"
+            ;;
+          namespace)
+            val="${!OPTIND}"
+            OPTIND=$((OPTIND + 1))
+            local NAMESPACE="$val"
+            ;;
+        esac
         ;;
-      storage-class-name)
-        val="${!OPTIND}"
-        OPTIND=$((OPTIND + 1))
-        local STORAGE_CLASS_NAME="$val"
-        ;;
-      namespace)
-        val="${!OPTIND}"
-        OPTIND=$((OPTIND + 1))
-        local NAMESPACE="$val"
-        ;;
-      esac
-      ;;
     esac
   done
-  
+
   [[ -z "$ACCESS_MODE" ]] && ACCESS_MODE="ReadWriteOnce"
   [[ "$ACCESS_MODE" == ReadWriteOnce ]] || [[ "$ACCESS_MODE" == ReadWriteMany ]] || [[ "$ACCESS_MODE" == ReadOnlyMany ]] || dokku_log_fail "Please specify PVC access mode as either ReadWriteOnce, ReadOnlyMany,  ReadWriteMany"
   [[ -z "$STORAGE_CLASS_NAME" ]] && STORAGE_CLASS_NAME=""
