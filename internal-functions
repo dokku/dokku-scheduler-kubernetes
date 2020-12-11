@@ -153,7 +153,7 @@ help_desc
 }
 
 fn-scheduler-kubernetes-add-cert-manager() {
-  declare INGRESS_FILE="$1" CERT_MANAGER_DOMAINS="${@:2}"
+  declare INGRESS_FILE="$1" CERT_MANAGER_DOMAINS=("${@:2}")
   local CERT_MANAGER_TLS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/cert-manager-tls.json.sigil"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
