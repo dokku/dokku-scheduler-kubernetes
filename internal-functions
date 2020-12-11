@@ -177,8 +177,9 @@ fn-scheduler-kubernetes-add-ingress-rule() {
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
-  # shellcheck disable=SC2016
   local SIGIL_PARAMS=(APP="$APP" PROCESS_TYPE="$PROC_TYPE" PORT="$PORT" DOMAIN="$DOMAIN")
+
+  # shellcheck disable=SC2016
   jq --argjson rule "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.rules += [$rule]' <"$INGRESS_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$INGRESS_FILE"
 }
@@ -521,6 +522,7 @@ fn-set-pod-annotations() {
     return
   fi
 
+  # shellcheck disable=SC2016
   jq -M --argjson data "{}" '.spec.template.metadata.annotations += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 
@@ -538,6 +540,7 @@ fn-set-ports() {
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   if is_image_herokuish_based "$IMAGE"; then
+    # shellcheck disable=SC2016
     jq -M --argjson data "[{\"name\": \"PORT\", \"value\": \"5000\"}]" '.spec.template.spec.containers[0].env += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
@@ -631,6 +634,7 @@ fn-set-service-annotations() {
     return
   fi
 
+  # shellcheck disable=SC2016
   jq -M --argjson data "{}" '.metadata.annotations += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 
@@ -660,6 +664,7 @@ fn-set-ingress-annotations() {
     return
   fi
 
+  # shellcheck disable=SC2016
   jq -M --argjson data "{}" '.metadata.annotations += $data' <"$INGRESS_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$INGRESS_FILE"
 
@@ -800,10 +805,14 @@ fn-set-mount() {
     local MOUNT_PATH=$(echo "$VOLUME_ENTRY" | cut -d':' -f2)
 
     local SIGIL_PARAMS=(VOLUME_NAME="$CLAIM_NAME" CLAIM_NAME="$CLAIM_NAME")
+
+    # shellcheck disable=SC2016
     jq --argjson volume "$(sigil -f "$VOLUMES_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.volumes += [$volume]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 
     local SIGIL_PARAMS=(VOLUME_NAME="$CLAIM_NAME" MOUNT_PATH="$MOUNT_PATH")
+
+    # shellcheck disable=SC2016
     jq --argjson mount "$(sigil -f "$VOLUME_MOUNTS_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.containers[0].volumeMounts += [$mount]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   done
