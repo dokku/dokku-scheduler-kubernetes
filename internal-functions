@@ -158,6 +158,7 @@ fn-scheduler-kubernetes-add-cert-manager() {
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
+  # shellcheck disable=SC2016
   jq --argjson tls "$(sigil -f "$CERT_MANAGER_TLS_TEMPLATE")" '.spec.tls += $tls' <"$INGRESS_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$INGRESS_FILE"
 
@@ -176,6 +177,7 @@ fn-scheduler-kubernetes-add-ingress-rule() {
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
+  # shellcheck disable=SC2016
   local SIGIL_PARAMS=(APP="$APP" PROCESS_TYPE="$PROC_TYPE" PORT="$PORT" DOMAIN="$DOMAIN")
   jq --argjson rule "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.rules += [$rule]' <"$INGRESS_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$INGRESS_FILE"
@@ -264,6 +266,8 @@ fn-scheduler-kubernetes-autoscale-add-hpa-rule() {
   fi
 
   local SIGIL_PARAMS=(METRIC_TYPE="$METRIC_TYPE" TARGET_NAME="$TARGET_NAME" TARGET_TYPE="$TARGET_TYPE" TARGET_VALUE="$TARGET_VALUE" TARGET_EXTRA="$TARGET_EXTRA" TARGET_TYPE_KEY="$TARGET_TYPE_KEY")
+
+  # shellcheck disable=SC2016
   jq --argjson metric "$(sigil -f "$RULE_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.metrics += [$metric]' <"$HPA_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$HPA_FILE"
 }
@@ -445,6 +449,7 @@ fn-set-deployment-annotations() {
     return
   fi
 
+  # shellcheck disable=SC2016
   jq -M --argjson data "{}" '.metadata.annotations += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 
@@ -461,6 +466,7 @@ fn-set-env-vars() {
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
+  # shellcheck disable=SC2016
   jq -M --argjson data "$(config_export app "$APP" --format json-list --merged)" '.spec.template.spec.containers[0].env += $data' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 }
