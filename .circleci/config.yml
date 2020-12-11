@@ -12,15 +12,15 @@ commands:
       - run: pyenv global << parameters.python_version >>
       - run: make setup
       - run: sudo sysctl -w vm.max_map_count=262144
-      - run:
-          command: |
-            make generate
-            if ! git diff --quiet README.md; then
-              echo "Please run `make generate`"
-              git status --short
-              git --no-pager diff README.md
-              exit 1
-            fi
+      # - run:
+      #     command: |
+      #       make generate
+      #       if ! git diff --quiet README.md; then
+      #         echo "Please run `make generate`"
+      #         git status --short
+      #         git --no-pager diff README.md
+      #         exit 1
+      #       fi
       - run: make test
       - store_artifacts:
           path: build
