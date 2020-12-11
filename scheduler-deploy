@@ -60,6 +60,7 @@ scheduler-kubernetes-scheduler-deploy() {
 
     dokku_log_info1 "Deploying ${PROC_TYPE} to ${PROC_COUNT}"
 
+    # shellcheck disable=SC2191
     local SIGIL_PARAMS=(APP="$APP" IMAGE="$IMAGE" PROCESS_COUNT="$PROC_COUNT" PROCESS_TYPE="$PROC_TYPE" PORT="5000")
 
     sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"

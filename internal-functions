@@ -177,6 +177,7 @@ fn-scheduler-kubernetes-add-ingress-rule() {
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
+  # shellcheck disable=SC2191
   local SIGIL_PARAMS=(APP="$APP" PROCESS_TYPE="$PROC_TYPE" PORT="$PORT" DOMAIN="$DOMAIN")
 
   # shellcheck disable=SC2016
@@ -229,6 +230,7 @@ fn-scheduler-kubernetes-autoscale-apply() {
     return
   fi
 
+  # shellcheck disable=SC2191
   local SIGIL_PARAMS=(APP="$APP" MAX_REPLICAS="$MAX_REPLICAS" MIN_REPLICAS="$MIN_REPLICAS" PROCESS_TYPE="$PROC_TYPE")
   sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
 
@@ -266,6 +268,7 @@ fn-scheduler-kubernetes-autoscale-add-hpa-rule() {
     TARGET_TYPE_KEY="averageUtilization"
   fi
 
+  # shellcheck disable=SC2191
   local SIGIL_PARAMS=(METRIC_TYPE="$METRIC_TYPE" TARGET_NAME="$TARGET_NAME" TARGET_TYPE="$TARGET_TYPE" TARGET_VALUE="$TARGET_VALUE" TARGET_EXTRA="$TARGET_EXTRA" TARGET_TYPE_KEY="$TARGET_TYPE_KEY")
 
   # shellcheck disable=SC2016
@@ -343,6 +346,8 @@ fn-scheduler-kubernetes-ingress-build-config() {
 
   if [[ -n "$CERT_MANAGER_EMAIL" ]]; then
     local CERTIFICATE_ISSUER_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/certificate-issuer.json.sigil"
+
+    # shellcheck disable=SC2191
     local SIGIL_PARAMS=(CERT_MANAGER_EMAIL="$CERT_MANAGER_EMAIL")
     sigil -f "$CERTIFICATE_ISSUER_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
@@ -352,6 +357,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
   local APP_NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "default")"
   local INGRESS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress.json.sigil"
 
+  # shellcheck disable=SC2191
   local SIGIL_PARAMS=()
   sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
 
@@ -434,6 +440,7 @@ fn-scheduler-kubernetes-ensure-namespace() {
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
+  # shellcheck disable=SC2191
   SIGIL_PARAMS=(NAME="$NAMESPACE")
   sigil -f "$NAMESPACE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
 
@@ -489,6 +496,7 @@ fn-set-healthchecks() {
 
   # We use sigil templating to allow the health check configurations to refer
   # to the app name with the variable $APP.
+  # shellcheck disable=SC2191
   local SIGIL_PARAMS=(APP="$APP")
   sigil -f "$APP_JSON_TMPL" "${SIGIL_PARAMS[@]}" | cat -s >"$APP_JSON_FILE"
 
@@ -565,6 +573,7 @@ fn-set-pod-disruption-constraints() {
   KUBE_ARGS+=("--namespace=$NAMESPACE")
   fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
 
+  # shellcheck disable=SC2191
   local SIGIL_PARAMS=(APP="$APP")
   sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$POD_TMP_FILE"
 
@@ -697,6 +706,8 @@ fn-scheduler-kubernetes-add-pvc() {
   else
     cp "$PVC_TEMPLATE" "$TMP_FILE"
   fi
+
+  # shellcheck disable=SC2191
   SIGIL_PARAMS=(NAME="$NAME" ACCESS_MODE="$ACCESS_MODE" STORAGE="$STORAGE")
   sigil -f "$TMP_FILE" "${SIGIL_PARAMS[@]}" | "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f - | sed "s/^/       /"
 }
@@ -804,12 +815,14 @@ fn-set-mount() {
     local CLAIM_NAME=$(echo "$VOLUME_ENTRY" | cut -d':' -f1)
     local MOUNT_PATH=$(echo "$VOLUME_ENTRY" | cut -d':' -f2)
 
+    # shellcheck disable=SC2191
     local SIGIL_PARAMS=(VOLUME_NAME="$CLAIM_NAME" CLAIM_NAME="$CLAIM_NAME")
 
     # shellcheck disable=SC2016
     jq --argjson volume "$(sigil -f "$VOLUMES_TEMPLATE" "${SIGIL_PARAMS[@]}")" '.spec.template.spec.volumes += [$volume]' <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 
+    # shellcheck disable=SC2191
     local SIGIL_PARAMS=(VOLUME_NAME="$CLAIM_NAME" MOUNT_PATH="$MOUNT_PATH")
 
     # shellcheck disable=SC2016
