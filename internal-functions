@@ -402,7 +402,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
   fn-scheduler-kubernetes-ensure-namespace "$APP_NAMESPACE" >/dev/null
 
   local SCHEME=http
-  if [[ -n "$CERT_MANAGER_EMAIL" ]] && [[ -n "$CERT_MANAGER_DOMAINS" ]]; then
+  if [[ -n "$CERT_MANAGER_EMAIL" ]] && [[ "${#CERT_MANAGER_DOMAINS[@]}" -ne 0 ]]; then
     local SCHEME=https
     fn-scheduler-kubernetes-add-cert-manager "$TMP_FILE" "${CERT_MANAGER_DOMAINS[@]}"
   fi
