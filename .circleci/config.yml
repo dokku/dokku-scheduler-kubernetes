@@ -47,7 +47,7 @@ jobs:
 
   build-version:
     environment:
-      DOKKU_VERSION: v0.19.0
+      DOKKU_VERSION: v0.20.4
     executor: machine
     steps:
       - build
