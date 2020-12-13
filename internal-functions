@@ -718,6 +718,66 @@ fn-scheduler-kubernetes-remove-pvc() {
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" delete pvc "$NAME"
 }
 
+fn-set-command-and-args() {
+  declare desc="set the command and args"
+  declare APP="$1" PROC_TYPE="$2" IMAGE_SOURCE_TYPE="$3" DEPLOYMENT_FILE="$4"
+
+  local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
+  trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
+
+  DOKKU_HEROKUISH=false
+  [[ "$IMAGE_SOURCE_TYPE" == "herokuish" ]] && true
+
+  local START_CMD
+  [[ "$DOKKU_HEROKUISH" == "true" ]] && START_CMD="/start $PROC_TYPE"
+  DOKKU_START_CMD=$(config_get "$APP" DOKKU_START_CMD || true)
+  [[ -n "$DOKKU_START_CMD" ]] && START_CMD="$DOKKU_START_CMD"
+
+  local command_with_args="$(fn-scheduler-kubernetes-extract-start-cmd "$APP" "$PROC_TYPE" "$START_CMD" "$DOKKU_HEROKUISH" 5000)"
+  if [[ -z "$command_with_args" ]]; then
+    dokku_log_fail "Unable to detect $PROC_TYPE command for app, removing command and args from manifest"
+    jq -M "del(.spec.template.spec.containers[0].command)" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+    jq -M "del(.spec.template.spec.containers[0].args)" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+    return
+  fi
+
+  COMMAND=""
+  ARGS=()
+  i=0
+  for word in ${command_with_args[@]}; do
+    [[ "$i" -eq 0 ]] && COMMAND="$word"
+    [[ "$i" -ne 0 ]] && ARGS+=("$word")
+    i=$((i + 1))
+  done
+
+  COMMAND="$COMMAND" jq -M ".spec.template.spec.containers[0].command = [env.COMMAND]" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  COMMAND="$COMMAND" jq -M ".spec.template.spec.containers[0].args = []" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+  mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+
+  for arg in "${ARGS[@]}"; do
+    ARG="$ARG" jq -M ".spec.template.spec.containers[0].command += [env.ARG]" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    mv "$TMP_FILE" "$DEPLOYMENT_FILE"
+  done
+}
+
+
+fn-scheduler-kubernetes-extract-start-cmd() {
+  declare APP="$1" PROC_TYPE="$2" START_CMD="$3" DOKKU_HEROKUISH="$4" PORT="$5"
+  local DOKKU_DOCKERFILE_START_CMD DOKKU_PROCFILE_START_CMD START_CMD
+  if [[ "$DOKKU_HEROKUISH" != "false" ]]; then
+    echo "$START_CMD"
+    return
+  fi
+
+  DOKKU_DOCKERFILE_START_CMD=$(config_get "$APP" DOKKU_DOCKERFILE_START_CMD || true)
+  DOKKU_PROCFILE_START_CMD=$(plugn trigger procfile-get-command "$APP" "$PROC_TYPE" "$PORT")
+  START_CMD=${DOKKU_DOCKERFILE_START_CMD:-$DOKKU_PROCFILE_START_CMD}
+  echo "$START_CMD"
+}
+
 fn-set-mount() {
   declare desc="mount volumes on path"
   declare APP="$1" DEPLOYMENT_FILE="$2"
