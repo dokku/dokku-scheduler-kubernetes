@@ -28,9 +28,9 @@ scheduler-kubernetes-scheduler-logs() {
   fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
 
   local LOG_ARGS=()
-  LOG_ARGS+="--tail"
-  LOG_ARGS+="$NUM"
-  [[ "$TAIL" == "true" ]] && LOG_ARGS+="--follow"
+  LOG_ARGS+=("--tail")
+  LOG_ARGS+=("$NUM")
+  [[ "$TAIL" == "true" ]] && LOG_ARGS+=("--follow")
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" logs -l "$LABEL" "${LOG_ARGS[@]}"
 }
 
