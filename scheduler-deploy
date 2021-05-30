@@ -46,7 +46,11 @@ scheduler-kubernetes-scheduler-deploy() {
   VALID_SERVICE_TYPES+=("web")
 
   local IMAGE_SOURCE_TYPE="dockerfile"
-  is_image_herokuish_based "$IMAGE" "$APP" && IMAGE_SOURCE_TYPE="herokuish"
+  is_image_cnb_based "$IMAGE" && DOKKU_CNB=true
+  is_image_herokuish_based "$IMAGE" "$APP" && DOKKU_HEROKUISH=true
+  local IMAGE_SOURCE_TYPE="dockerfile"
+  [[ "$DOKKU_HEROKUISH" == "true" ]] && IMAGE_SOURCE_TYPE="herokuish"
+  [[ "$DOKKU_CNB" == "true" ]] && IMAGE_SOURCE_TYPE="pack"
 
   while read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ ^#.* ]] && continue
