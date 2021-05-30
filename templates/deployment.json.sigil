@@ -34,7 +34,7 @@
               "{{ $.PROCESS_TYPE }}"
             ],
             "command": [
-              
+              "/start"
             ],
             "env": [],
             "image": "{{ $.IMAGE }}",
