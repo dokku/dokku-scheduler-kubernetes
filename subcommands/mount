@@ -14,7 +14,7 @@ cmd-scheduler-kubernetes-mount() {
   verify_app_name "$APP"
   [[ -z "$CLAIM_NAME" ]] && dokku_log_fail "Please specify a PVC claim name"
   [[ -z "$MOUNT_PATH" ]] && dokku_log_fail "Please specify a mount path"
-  
+
   dokku_log_info2_quiet "Setting Claim name and Path to $CLAIM_NAME:$MOUNT_PATH (Re-deploy Required)"
   fn-plugin-property-list-add "scheduler-kubernetes" "$APP" "volumes" "$CLAIM_NAME:$MOUNT_PATH"
 }

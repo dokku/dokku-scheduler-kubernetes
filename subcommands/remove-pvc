@@ -13,18 +13,18 @@ cmd-scheduler-kubernetes-remove-pvc() {
   [[ -z "$NAME" ]] && dokku_log_fail "Please specify a name for PVC"
   while getopts ":-:" opt "$@"; do
     case "$opt" in
-    -)
-      case "$OPTARG" in
-      namespace)
-        val="${!OPTIND}"
-        OPTIND=$((OPTIND + 1))
-        local NAMESPACE="$val"
+      -)
+        case "$OPTARG" in
+          namespace)
+            val="${!OPTIND}"
+            OPTIND=$((OPTIND + 1))
+            local NAMESPACE="$val"
+            ;;
+        esac
         ;;
-      esac
-      ;;
     esac
   done
-  
+
   [[ -z "$NAMESPACE" ]] && NAMESPACE="default"
 
   fn-scheduler-kubernetes-remove-pvc "$NAME" "$NAMESPACE"

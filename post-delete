@@ -6,7 +6,7 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/property-functions"
 scheduler-kubernetes-post-delete() {
   declare desc="scheduler-kubernetes post-delete plugin trigger"
   declare trigger="scheduler-kubernetes post-delete"
-  declare APP="$2"
+  declare APP="$1"
   local KUBE_ARGS NAMESPACE
 
   fn-plugin-property-destroy "scheduler-kubernetes" "$APP"

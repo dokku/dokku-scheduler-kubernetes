@@ -23,14 +23,14 @@ scheduler-kubernetes-scheduler-logs() {
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
   export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
   KUBE_ARGS=()
-  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "")"
-  if [[ -n "$NAMESPACE" ]]; then
-    KUBE_ARGS+=("--namespace=$NAMESPACE")
-    fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
-  fi
+  NAMESPACE="$(fn-plugin-property-get "scheduler-kubernetes" "$APP" "namespace" "default")"
+  KUBE_ARGS+=("--namespace=$NAMESPACE")
+  fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
 
-  local LOGS_ARGS="--tail $NUM"
-  [[ "$TAIL" == "true" ]] && LOGS_ARG+=" --follow "
+  local LOG_ARGS=()
+  LOG_ARGS+=("--tail")
+  LOG_ARGS+=("$NUM")
+  [[ "$TAIL" == "true" ]] && LOG_ARGS+=("--follow")
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" logs -l "$LABEL" "${LOG_ARGS[@]}"
 }
 

@@ -14,7 +14,7 @@ cmd-scheduler-kubernetes-unmount() {
   verify_app_name "$APP"
   [[ -z "$CLAIM_NAME" ]] && dokku_log_fail "Please specify a PVC claim name"
   [[ -z "$MOUNT_PATH" ]] && dokku_log_fail "Please specify a mount path"
-  
+
   dokku_log_info2_quiet "Removing Claim Name and Path $CLAIM_NAME:$MOUNT_PATH (Re-deploy Required) "
   fn-plugin-property-list-remove "scheduler-kubernetes" "$APP" "volumes" "$CLAIM_NAME:$MOUNT_PATH"
 }
