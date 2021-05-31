@@ -754,7 +754,6 @@ fn-set-command-and-args() {
   done
 }
 
-
 fn-scheduler-kubernetes-extract-start-cmd() {
   declare APP="$1" PROC_TYPE="$2" DOKKU_HEROKUISH="$3" PORT="$4"
   local DOKKU_DOCKERFILE_START_CMD DOKKU_PROCFILE_START_CMD START_CMD

@@ -52,8 +52,8 @@ if [[ -n "$DOCKERHUB_USERNAME" ]] && [[ -n "$DOCKERHUB_PASSWORD" ]]; then
   sudo kubectl delete secret registry-credential || true
   sudo dokku registry:login docker.io "$DOCKERHUB_USERNAME" "$DOCKERHUB_PASSWORD"
   sudo kubectl create secret generic registry-credential \
-      --from-file=.dockerconfigjson=/home/dokku/.docker/config.json \
-      --type=kubernetes.io/dockerconfigjson
+    --from-file=.dockerconfigjson=/home/dokku/.docker/config.json \
+    --type=kubernetes.io/dockerconfigjson
 else
   echo "Dockerhub username or password missing, skipping login to registry"
 fi
