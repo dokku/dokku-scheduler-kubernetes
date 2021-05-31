@@ -18,6 +18,10 @@ teardown() {
 }
 
 @test "(scheduler-kubernetes) deploy dockerfile" {
+  if [[ -z "$DOCKERHUB_USERNAME" ]] || [[ -z "$DOCKERHUB_PASSWORD" ]]; then
+    skip "Missing docker hub credentials"
+  fi
+
   run deploy_app dockerfile-procfile
   echo "output: $output"
   echo "status: $status"
@@ -30,6 +34,10 @@ teardown() {
 }
 
 @test "(scheduler-kubernetes) deploy herokuish" {
+  if [[ -z "$DOCKERHUB_USERNAME" ]] || [[ -z "$DOCKERHUB_PASSWORD" ]]; then
+    skip "Missing docker hub credentials"
+  fi
+
   run deploy_app python
   echo "output: $output"
   echo "status: $status"
