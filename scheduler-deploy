@@ -62,7 +62,7 @@ scheduler-kubernetes-scheduler-deploy() {
 
     local SIGIL_PARAMS=(APP="$APP" IMAGE="$IMAGE" PROCESS_COUNT="$PROC_COUNT" PROCESS_TYPE="$PROC_TYPE" PORT="5000")
 
-    sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+    sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
     [[ "$PROC_TYPE" != "web" ]] && fn-strip-ports "$TMP_FILE"
     fn-set-env-vars "$APP" "$TMP_FILE"
     fn-set-ports "$APP" "$TMP_FILE"
@@ -80,7 +80,7 @@ scheduler-kubernetes-scheduler-deploy() {
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog" "${KUBE_ARGS[@]}" --timeout=600 rollout track deployment "${APP}-${PROC_TYPE}"
 
     if fn-in-array "$PROC_TYPE" "${VALID_SERVICE_TYPES[@]}"; then
-      sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+      sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
       fn-set-service-annotations "$APP" "$TMP_FILE"
       plugn trigger pre-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" service
       "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"

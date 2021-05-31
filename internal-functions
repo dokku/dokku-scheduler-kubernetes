@@ -161,7 +161,7 @@ fn-scheduler-kubernetes-add-cert-manager() {
   jq --argjson tls "$(sigil -f "$CERT_MANAGER_TLS_TEMPLATE")" '.spec.tls += $tls' <"$INGRESS_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$INGRESS_FILE"
 
-  for domain in ${CERT_MANAGER_DOMAINS[*]}; do
+  for domain in "${CERT_MANAGER_DOMAINS[@]}"; do
     DOMAIN="$domain" jq '.spec.tls[0].hosts += [env.DOMAIN]' <"$INGRESS_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$INGRESS_FILE"
   done
@@ -227,9 +227,9 @@ fn-scheduler-kubernetes-autoscale-apply() {
   fi
 
   local SIGIL_PARAMS=(APP="$APP" MAX_REPLICAS="$MAX_REPLICAS" MIN_REPLICAS="$MIN_REPLICAS" PROCESS_TYPE="$PROC_TYPE")
-  sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+  sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
 
-  for RULE in ${RULES[@]}; do
+  for RULE in "${RULES[@]}"; do
     fn-scheduler-kubernetes-autoscale-add-hpa-rule "$RULE" "$TMP_FILE"
   done
 
@@ -304,12 +304,12 @@ fn-scheduler-kubernetes-autoscale-rule-validate() {
     VALID_TARGET_TYPES=("AverageValue" "Utilization")
     local VALID_TARGET_NAMES=("cpu" "memory")
     if ! fn-in-array "$TARGET_NAME" "${VALID_TARGET_NAMES[@]}"; then
-      dokku_log_fail "Invalid target name '${TARGET_NAME}', valid types: ${VALID_TARGET_NAMES[@]}"
+      dokku_log_fail "Invalid target name '${TARGET_NAME}', valid types: ${VALID_TARGET_NAMES[*]}"
     fi
   fi
 
   if ! fn-in-array "$TARGET_TYPE" "${VALID_TARGET_TYPES[@]}"; then
-    dokku_log_fail "Invalid target type '${TARGET_TYPE}', valid types: ${VALID_TARGET_TYPES[@]}"
+    dokku_log_fail "Invalid target type '${TARGET_TYPE}', valid types: ${VALID_TARGET_TYPES[*]}"
   fi
 }
 
@@ -339,7 +339,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
   if [[ -n "$CERT_MANAGER_EMAIL" ]]; then
     local CERTIFICATE_ISSUER_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/certificate-issuer.json.sigil"
     local SIGIL_PARAMS=(CERT_MANAGER_EMAIL="$CERT_MANAGER_EMAIL")
-    sigil -f "$CERTIFICATE_ISSUER_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+    sigil -f "$CERTIFICATE_ISSUER_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
   fi
 
@@ -348,7 +348,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
   local INGRESS_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/ingress.json.sigil"
 
   local SIGIL_PARAMS=()
-  sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+  sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
 
   for app in $(dokku_apps); do
     local DOKKU_SCALE_FILE="$DOKKU_ROOT/$app/DOKKU_SCALE"
@@ -430,7 +430,7 @@ fn-scheduler-kubernetes-ensure-namespace() {
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   SIGIL_PARAMS=(NAME="$NAMESPACE")
-  sigil -f "$NAMESPACE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+  sigil -f "$NAMESPACE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
 
   "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" apply -f "$TMP_FILE" | sed "s/^/       /"
 }
@@ -483,7 +483,7 @@ fn-set-healthchecks() {
   # We use sigil templating to allow the health check configurations to refer
   # to the app name with the variable $APP.
   local SIGIL_PARAMS=(APP="$APP")
-  sigil -f "$APP_JSON_TMPL" "${SIGIL_PARAMS[@]}" | cat -s >$APP_JSON_FILE
+  sigil -f "$APP_JSON_TMPL" "${SIGIL_PARAMS[@]}" | cat -s >"$APP_JSON_FILE"
 
   for PROBE_TYPE in liveness readiness; do
     if jq -e -M ".healthchecks.\"$PROC_TYPE\".\"$PROBE_TYPE\"" <"$APP_JSON_FILE" >"$PROBE_FILE" \
@@ -557,7 +557,7 @@ fn-set-pod-disruption-constraints() {
   fn-scheduler-kubernetes-ensure-namespace "$NAMESPACE" >/dev/null
 
   local SIGIL_PARAMS=(APP="$APP")
-  sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$POD_TMP_FILE
+  sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$POD_TMP_FILE"
 
   if [[ -n "$MIN_AVAILABLE" ]]; then
     MIN_AVAILABLE="$MIN_AVAILABLE" jq -M '.spec.minAvailable = (env.MIN_AVAILABLE|tonumber)' <"$POD_TMP_FILE" >"$TMP_FILE"
@@ -737,7 +737,7 @@ fn-set-command-and-args() {
   COMMAND=""
   ARGS=()
   i=0
-  for word in ${command_with_args[@]}; do
+  for word in "${command_with_args[@]}"; do
     [[ "$i" -eq 0 ]] && COMMAND="$word"
     [[ "$i" -ne 0 ]] && ARGS+=("$word")
     i=$((i + 1))
@@ -789,7 +789,7 @@ fn-set-mount() {
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   VOLUMES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "volumes")"
-  for VOLUME_ENTRY in ${VOLUMES[@]}; do
+  for VOLUME_ENTRY in "${VOLUMES[@]}"; do
     local CLAIM_NAME=$(echo "$VOLUME_ENTRY" | cut -d':' -f1)
     local MOUNT_PATH=$(echo "$VOLUME_ENTRY" | cut -d':' -f2)
 
