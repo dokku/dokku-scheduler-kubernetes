@@ -749,7 +749,7 @@ fn-set-command-and-args() {
   mv "$TMP_FILE" "$DEPLOYMENT_FILE"
 
   for ARG in "${ARGS[@]}"; do
-    ARG="$ARG" jq -M ".spec.template.spec.containers[0].command += [env.ARG]" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
+    ARG="$ARG" jq -M ".spec.template.spec.containers[0].args += [env.ARG]" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   done
 }
