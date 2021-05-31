@@ -30,12 +30,6 @@
       "spec": {
         "containers": [
           {
-            "args": [
-              "{{ $.PROCESS_TYPE }}"
-            ],
-            "command": [
-              "/start"
-            ],
             "env": [],
             "image": "{{ $.IMAGE }}",
             "imagePullPolicy": "Always",

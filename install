@@ -24,9 +24,13 @@ scheduler-kubernetes-install() {
 
   local KUBEDOG_VENDOR_URL="${KUBEDOG_VENDOR_URL:-"https://dl.bintray.com"}"
   local KUBEDOG_VERSION="${KUBEDOG_VERSION:-v0.3.4}"
+  local KUBEDOG_URL="${KUBEDOG_URL:-"${KUBEDOG_VENDOR_URL}/flant/kubedog/${KUBEDOG_VERSION}/kubedog-linux-amd64-${KUBEDOG_VERSION}"}"
+
+  # hardcode kubedog vendor for now
+  KUBEDOG_URL=https://github.com/dokku/dokku-scheduler-kubernetes/releases/download/0.17.6/kubedog-linux-amd64-v0.3.4
   if [[ ! -f "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog-${KUBEDOG_VERSION}" ]]; then
     dokku_log_info1_quiet "Installing kubedog@${KUBEDOG_VERSION}"
-    curl -sL "${KUBEDOG_VENDOR_URL}/flant/kubedog/${KUBEDOG_VERSION}/kubedog-linux-amd64-${KUBEDOG_VERSION}" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog-${KUBEDOG_VERSION}"
+    curl -sL "$KUBEDOG_URL" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog-${KUBEDOG_VERSION}"
     cp "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog-${KUBEDOG_VERSION}" "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
     chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubedog"
   fi
