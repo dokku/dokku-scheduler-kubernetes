@@ -737,7 +737,7 @@ fn-set-command-and-args() {
   COMMAND=""
   ARGS=()
   i=0
-  for word in "${command_with_args[@]}"; do
+  for word in ${command_with_args[@]}; do
     [[ "$i" -eq 0 ]] && COMMAND="$word"
     [[ "$i" -ne 0 ]] && ARGS+=("$word")
     i=$((i + 1))
