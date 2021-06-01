@@ -35,6 +35,9 @@ cmd-scheduler-kubernetes-show-manifest() {
   fi
   VALID_SERVICE_TYPES+=("web")
 
+  local IMAGE_SOURCE_TYPE="dockerfile"
+  is_image_herokuish_based "$IMAGE" "$APP" && IMAGE_SOURCE_TYPE="herokuish"
+
   while read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ ^#.* ]] && continue
     line="$(strip_inline_comments "$line")"
@@ -48,7 +51,7 @@ cmd-scheduler-kubernetes-show-manifest() {
     FOUND=true
     local SIGIL_PARAMS=(APP="$APP" IMAGE="$IMAGE" PROCESS_COUNT="$PROC_COUNT" PROCESS_TYPE="$PROC_TYPE" PORT="5000")
 
-    sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+    sigil -f "$DEPLOYMENT_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
     [[ "$PROC_TYPE" != "web" ]] && fn-strip-ports "$TMP_FILE"
     fn-set-env-vars "$APP" "$TMP_FILE"
     fn-set-ports "$APP" "$TMP_FILE"
@@ -58,6 +61,7 @@ cmd-scheduler-kubernetes-show-manifest() {
     fn-set-deployment-annotations "$APP" "$TMP_FILE"
     fn-set-pod-annotations "$APP" "$TMP_FILE"
     fn-set-mount "$APP" "$TMP_FILE"
+    fn-set-command-and-args "$APP" "$PROC_TYPE" "$IMAGE_SOURCE_TYPE" "$TMP_FILE"
 
     plugn trigger pre-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" deployment
     if [[ "$MANIFEST_TYPE" == "deployment" ]]; then
@@ -66,7 +70,7 @@ cmd-scheduler-kubernetes-show-manifest() {
     fi
 
     if fn-in-array "$PROC_TYPE" "${VALID_SERVICE_TYPES[@]}"; then
-      sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >$TMP_FILE
+      sigil -f "$SERVICE_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
       fn-set-service-annotations "$APP" "$TMP_FILE"
       plugn trigger pre-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" service
 

@@ -15,7 +15,7 @@ cmd-scheduler-kubernetes-list-mount() {
 
   dokku_log_info2_quiet "Listing Mounts as Claim-Name:Path"
   VOLUMES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "volumes")"
-  for VOLUME in ${VOLUMES[@]}; do
+  for VOLUME in "${VOLUMES[@]}"; do
     echo "$VOLUME"
   done
 }
