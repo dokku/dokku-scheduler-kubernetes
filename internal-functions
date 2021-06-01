@@ -161,7 +161,7 @@ fn-scheduler-kubernetes-add-cert-manager() {
   jq --argjson tls "$(sigil -f "$CERT_MANAGER_TLS_TEMPLATE")" '.spec.tls += $tls' <"$INGRESS_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$INGRESS_FILE"
 
-  for domain in "${CERT_MANAGER_DOMAINS[@]}"; do
+  for domain in ${CERT_MANAGER_DOMAINS[@]}; do
     DOMAIN="$domain" jq '.spec.tls[0].hosts += [env.DOMAIN]' <"$INGRESS_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$INGRESS_FILE"
   done
@@ -229,7 +229,7 @@ fn-scheduler-kubernetes-autoscale-apply() {
   local SIGIL_PARAMS=(APP="$APP" MAX_REPLICAS="$MAX_REPLICAS" MIN_REPLICAS="$MIN_REPLICAS" PROCESS_TYPE="$PROC_TYPE")
   sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
 
-  for RULE in "${RULES[@]}"; do
+  for RULE in ${RULES[@]}; do
     fn-scheduler-kubernetes-autoscale-add-hpa-rule "$RULE" "$TMP_FILE"
   done
 
@@ -737,7 +737,7 @@ fn-set-command-and-args() {
   COMMAND=""
   ARGS=()
   i=0
-  for word in "${command_with_args[@]}"; do
+  for word in ${command_with_args[@]}; do
     [[ "$i" -eq 0 ]] && COMMAND="$word"
     [[ "$i" -ne 0 ]] && ARGS+=("$word")
     i=$((i + 1))
@@ -789,7 +789,7 @@ fn-set-mount() {
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   VOLUMES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "volumes")"
-  for VOLUME_ENTRY in "${VOLUMES[@]}"; do
+  for VOLUME_ENTRY in ${VOLUMES[@]}; do
     local CLAIM_NAME=$(echo "$VOLUME_ENTRY" | cut -d':' -f1)
     local MOUNT_PATH=$(echo "$VOLUME_ENTRY" | cut -d':' -f2)
 
