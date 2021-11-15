@@ -9,7 +9,7 @@ scheduler-kubernetes-install-dependencies() {
 
   case "$DOKKU_DISTRO" in
     debian | ubuntu)
-      apt-get install -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" --force-yes -qq -y jq
+      apt-get install -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -qq -y jq
       ;;
 
     opensuse)
