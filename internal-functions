@@ -600,6 +600,9 @@ fn-set-resource-constraints() {
   fi
 
   if [[ -n "$RESOURCE_LIMITS_MEMORY" ]]; then
+    if [[ "$RESOURCE_LIMITS_MEMORY" =~ ^[0-9]+$ ]]; then
+      RESOURCE_LIMITS_MEMORY="${RESOURCE_LIMITS_MEMORY}Mi"
+    fi
     RESOURCE_LIMITS_MEMORY="$RESOURCE_LIMITS_MEMORY" jq -M ".spec.template.spec.containers[0].resources.limits.memory = env.RESOURCE_LIMITS_MEMORY" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
@@ -610,6 +613,9 @@ fn-set-resource-constraints() {
   fi
 
   if [[ -n "$RESOURCE_REQUESTS_MEMORY" ]]; then
+    if [[ "$RESOURCE_REQUESTS_MEMORY" =~ ^[0-9]+$ ]]; then
+      RESOURCE_REQUESTS_MEMORY="${RESOURCE_REQUESTS_MEMORY}Mi"
+    fi
     RESOURCE_REQUESTS_MEMORY="$RESOURCE_REQUESTS_MEMORY" jq -M ".spec.template.spec.containers[0].resources.requests.memory = env.RESOURCE_REQUESTS_MEMORY" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
