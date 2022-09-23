@@ -25,7 +25,6 @@ scheduler-kubernetes-scheduler-deploy() {
 
   dokku_log_info2 "Deploying via kubernetes"
   IMAGE=$(get_deploying_app_image_name "$APP" "$IMAGE_TAG")
-  plugn trigger pre-deploy "$APP" "$IMAGE_TAG"
 
   fn-set-pod-disruption-constraints "$APP"
 

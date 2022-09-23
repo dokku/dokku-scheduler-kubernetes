@@ -161,7 +161,7 @@ fn-scheduler-kubernetes-add-cert-manager() {
   jq --argjson tls "$(sigil -f "$CERT_MANAGER_TLS_TEMPLATE")" '.spec.tls += $tls' <"$INGRESS_FILE" >"$TMP_FILE"
   mv "$TMP_FILE" "$INGRESS_FILE"
 
-  for domain in "${CERT_MANAGER_DOMAINS[@]}"; do
+  for domain in ${CERT_MANAGER_DOMAINS[@]}; do
     DOMAIN="$domain" jq '.spec.tls[0].hosts += [env.DOMAIN]' <"$INGRESS_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$INGRESS_FILE"
   done
@@ -229,7 +229,7 @@ fn-scheduler-kubernetes-autoscale-apply() {
   local SIGIL_PARAMS=(APP="$APP" MAX_REPLICAS="$MAX_REPLICAS" MIN_REPLICAS="$MIN_REPLICAS" PROCESS_TYPE="$PROC_TYPE")
   sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
 
-  for RULE in "${RULES[@]}"; do
+  for RULE in ${RULES[@]}; do
     fn-scheduler-kubernetes-autoscale-add-hpa-rule "$RULE" "$TMP_FILE"
   done
 
@@ -600,6 +600,9 @@ fn-set-resource-constraints() {
   fi
 
   if [[ -n "$RESOURCE_LIMITS_MEMORY" ]]; then
+    if [[ "$RESOURCE_LIMITS_MEMORY" =~ ^[0-9]+$ ]]; then
+      RESOURCE_LIMITS_MEMORY="${RESOURCE_LIMITS_MEMORY}Mi"
+    fi
     RESOURCE_LIMITS_MEMORY="$RESOURCE_LIMITS_MEMORY" jq -M ".spec.template.spec.containers[0].resources.limits.memory = env.RESOURCE_LIMITS_MEMORY" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
@@ -610,6 +613,9 @@ fn-set-resource-constraints() {
   fi
 
   if [[ -n "$RESOURCE_REQUESTS_MEMORY" ]]; then
+    if [[ "$RESOURCE_REQUESTS_MEMORY" =~ ^[0-9]+$ ]]; then
+      RESOURCE_REQUESTS_MEMORY="${RESOURCE_REQUESTS_MEMORY}Mi"
+    fi
     RESOURCE_REQUESTS_MEMORY="$RESOURCE_REQUESTS_MEMORY" jq -M ".spec.template.spec.containers[0].resources.requests.memory = env.RESOURCE_REQUESTS_MEMORY" <"$DEPLOYMENT_FILE" >"$TMP_FILE"
     mv "$TMP_FILE" "$DEPLOYMENT_FILE"
   fi
@@ -789,7 +795,7 @@ fn-set-mount() {
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
 
   VOLUMES="$(fn-plugin-property-list-get "scheduler-kubernetes" "$APP" "volumes")"
-  for VOLUME_ENTRY in "${VOLUMES[@]}"; do
+  for VOLUME_ENTRY in ${VOLUMES[@]}; do
     local CLAIM_NAME=$(echo "$VOLUME_ENTRY" | cut -d':' -f1)
     local MOUNT_PATH=$(echo "$VOLUME_ENTRY" | cut -d':' -f2)
 

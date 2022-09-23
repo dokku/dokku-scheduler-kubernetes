@@ -1,6 +1,6 @@
 [plugin]
 description = "dokku scheduler-kubernetes plugin"
-version = "0.18.0"
+version = "0.19.1"
 [plugin.config]
 dependencies = [
   "https://github.com/dokku/dokku-registry.git"

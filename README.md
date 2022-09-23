@@ -34,6 +34,7 @@ The following functionality has been implemented
 - Letsencrypt SSL Certificate integration via CertManager
 - Pod Disruption Budgets
 - Resource limits and reservations (reservations == kubernetes requests)
+  - If no unit is specified, the values for memory are assumed to be in Mi (Megabytes)
 - Zero-downtime deploys via Deployment healthchecks
 - Traffic to non-web containers (via a configurable list)
 
