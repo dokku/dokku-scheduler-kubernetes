@@ -3,9 +3,14 @@
   "http": {
     "paths": [
       {
+        "pathType": "ImplementationSpecific",
         "backend": {
-          "serviceName": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
-          "servicePort": {{ $.PORT }}
+          "service":{
+            "name" :  "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
+            "port": {
+              "number" : {{ $.PORT }}
+            }
+          }
         }
       }
     ]
