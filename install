@@ -13,11 +13,11 @@ scheduler-kubernetes-install() {
 
   fn-plugin-property-setup "scheduler-kubernetes"
 
-  local KUBECTL_VENDOR_URL="${KUBECTL_VENDOR_URL:-"https://storage.googleapis.com"}"
-  local KUBECTL_VERSION="${KUBECTL_VERSION:-v1.14.1}"
+  local KUBECTL_VENDOR_URL="${KUBECTL_VENDOR_URL:-"https://dl.k8s.io"}"
+  local KUBECTL_VERSION="${KUBECTL_VERSION:-v1.22.13}"
   if [[ ! -f "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl-${KUBECTL_VERSION}" ]]; then
     dokku_log_info1_quiet "Installing kubectl@${KUBECTL_VERSION}"
-    curl -sL "${KUBECTL_VENDOR_URL}/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl-${KUBECTL_VERSION}"
+    curl -sL "${KUBECTL_VENDOR_URL}/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl-${KUBECTL_VERSION}"
     cp "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl-${KUBECTL_VERSION}" "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
     chmod +x "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl"
   fi
