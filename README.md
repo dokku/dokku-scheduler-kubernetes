@@ -108,7 +108,7 @@ dokku scheduler-kubernetes:set $APP imagePullSecrets registry-credential
 > This functionality assumes a helm-installed `nginx-ingress` controller:
 >
 > ```shell
-> helm install nginx-ingress stable/nginx-ingress --set controller.publishService.enabled=true
+> helm install ingress-nginx/ingress-nginx --set controller.publishService.enabled=true
 > ```
 
 A Kubernetes Service object is created for each `web` process. Additionally, if the app has it's `proxy-type` set to `nginx-ingress`, then we will also create or update a Kubernetes ingress object within the namespace configured for the app. This can be set as follows:
@@ -139,10 +139,10 @@ The PORT environment variable is hardcoded to 5000. No Ingress object is created
 > This functionality assumes a helm-installed `cert-manager` CRD:
 >
 > ```shell
-> kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml
+> kubectl apply --validate=false -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.0/cert-manager.crds.yaml
 > kubectl create namespace cert-manager
 > helm repo add jetstack https://charts.jetstack.io
-> helm install cert-manager --version v0.14.1 --namespace cert-manager jetstack/cert-manager
+> helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.10.0
 > ```
 
 At this time, the `scheduler-kubernetes` does not have support for custom SSL certificates. However, domains associated with an app can have a Letsencrypt SSL certificate provisioned automatically via the [CertManager](https://github.com/jetstack/cert-manager) Kubernetes add-on.
