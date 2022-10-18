@@ -108,7 +108,7 @@ dokku scheduler-kubernetes:set $APP imagePullSecrets registry-credential
 > This functionality assumes a helm-installed `nginx-ingress` controller:
 >
 > ```shell
-> helm install ingress-nginx/ingress-nginx --set controller.publishService.enabled=true
+> helm install ingress-nginx ingress-nginx/ingress-nginx --set controller.publishService.enabled=true
 > ```
 
 A Kubernetes Service object is created for each `web` process. Additionally, if the app has it's `proxy-type` set to `nginx-ingress`, then we will also create or update a Kubernetes ingress object within the namespace configured for the app. This can be set as follows:
