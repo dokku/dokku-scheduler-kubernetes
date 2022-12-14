@@ -3,15 +3,16 @@
   "http": {
     "paths": [
       {
-        "pathType": "ImplementationSpecific",
         "backend": {
-          "service":{
-            "name" :  "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
+          "service": {
+            "name": "{{ $.APP }}-{{ $.PROCESS_TYPE }}",
             "port": {
-              "number" : {{ $.PORT }}
+              "number": {{ $.PORT }}
             }
           }
-        }
+        },
+        "path": "/",
+        "pathType": "ImplementationSpecific"
       }
     ]
   }
