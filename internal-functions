@@ -19,12 +19,6 @@ cmd-scheduler-kubernetes-rolling-update() {
     return 1
   fi
 
-  local DOKKU_SCALE_FILE="$DOKKU_ROOT/$APP/DOKKU_SCALE"
-  if [[ ! -f "$DOKKU_SCALE_FILE" ]]; then
-    dokku_log_fail "No processes found for $APP"
-    return 1
-  fi
-
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
   export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
   KUBE_ARGS=()
@@ -39,7 +33,7 @@ cmd-scheduler-kubernetes-rolling-update() {
     PROC_TYPE=${line%%=*}
 
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" patch deployment "${APP}-${PROC_TYPE}" --patch "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"dokku.com/rolling-update-time\":\"$(date -u "+%Y-%m-%d-%H-%M-%S")\"}}}}}" | sed "s/^/       /"
-  done <"$DOKKU_SCALE_FILE"
+  done < <(plugin trigger ps-current-scale "$APP")
 }
 
 cmd-scheduler-kubernetes-report() {
@@ -351,7 +345,6 @@ fn-scheduler-kubernetes-ingress-build-config() {
   sigil -f "$INGRESS_TEMPLATE" "${SIGIL_PARAMS[@]}" | cat -s >"$TMP_FILE"
 
   for app in $(dokku_apps); do
-    local DOKKU_SCALE_FILE="$DOKKU_ROOT/$app/DOKKU_SCALE"
     local DOKKU_VHOST_FILE="$DOKKU_ROOT/$app/VHOST"
     local namespace="$(fn-plugin-property-get "scheduler-kubernetes" "$app" "namespace" "default")"
     local cert_manager_enabled="$(fn-plugin-property-get "scheduler-kubernetes" "$app" "cert-manager-enabled" "")"
@@ -360,7 +353,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
       continue
     fi
 
-    if [[ ! -f "$DOKKU_SCALE_FILE" ]] || [[ ! -f "$DOKKU_VHOST_FILE" ]]; then
+    if [[ ! -f "$DOKKU_VHOST_FILE" ]]; then
       continue
     fi
 
@@ -390,7 +383,7 @@ fn-scheduler-kubernetes-ingress-build-config() {
         HAS_RULE=true
         fn-scheduler-kubernetes-add-ingress-rule "$app" "$PROC_TYPE" "5000" "$DOMAIN" "$TMP_FILE"
       done <"$DOKKU_VHOST_FILE"
-    done <"$DOKKU_SCALE_FILE"
+    done < <(plugn trigger ps-current-scale "$app")
   done
 
   if [[ "$HAS_RULE" == "false" ]]; then

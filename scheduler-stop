@@ -15,11 +15,6 @@ scheduler-kubernetes-scheduler-stop() {
     return
   fi
 
-  local DOKKU_SCALE_FILE="$DOKKU_ROOT/$APP/DOKKU_SCALE"
-  if [[ ! -f "$DOKKU_SCALE_FILE" ]]; then
-    return
-  fi
-
   export KUBECONFIG="${DOKKU_ROOT}/.kube/config"
   export KUBEDOG_KUBE_CONFIG="${DOKKU_ROOT}/.kube/config"
   KUBE_ARGS=()
@@ -36,7 +31,7 @@ scheduler-kubernetes-scheduler-stop() {
     if "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" get deployment "${APP}-${PROC_TYPE}" 2>/dev/null; then
       "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" scale --replicas=0 "deployment/${APP}-${PROC_TYPE}"
     fi
-  done <"$DOKKU_SCALE_FILE"
+  done < <(plugn trigger ps-current-scale "$APP")
 }
 
 scheduler-kubernetes-scheduler-stop "$@"

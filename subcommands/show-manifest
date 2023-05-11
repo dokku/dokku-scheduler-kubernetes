@@ -19,7 +19,6 @@ cmd-scheduler-kubernetes-show-manifest() {
 
   local DEPLOYMENT_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/deployment.json.sigil"
   local SERVICE_TEMPLATE="$PLUGIN_AVAILABLE_PATH/scheduler-kubernetes/templates/service.json.sigil"
-  local DOKKU_SCALE_FILE="$DOKKU_ROOT/$APP/DOKKU_SCALE"
   local FOUND=false
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
@@ -77,7 +76,7 @@ cmd-scheduler-kubernetes-show-manifest() {
       cat "$TMP_FILE"
       return
     fi
-  done <"$DOKKU_SCALE_FILE"
+  done < <(plugn trigger ps-current-scale "$APP")
 
   if [[ "$FOUND" != "true" ]]; then
     dokku_log_fail "Unable to find $MANIFEST_TYPE for process type $PROC_TYPE"
