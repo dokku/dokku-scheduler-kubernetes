@@ -18,7 +18,6 @@ scheduler-kubernetes-scheduler-deploy() {
   fi
 
   local line PROC_TYPE PROC_COUNT CONTAINER_INDEX
-  local DOKKU_SCALE_FILE="$DOKKU_ROOT/$APP/DOKKU_SCALE"
   local DEPLOYMENT_ID="$(date +%s)"
   local TMP_FILE=$(mktemp "/tmp/${FUNCNAME[0]}.XXXX")
   trap 'rm -rf "$TMP_FILE" > /dev/null' RETURN INT TERM EXIT
@@ -86,7 +85,7 @@ scheduler-kubernetes-scheduler-deploy() {
     fi
 
     plugn trigger post-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" deployment
-  done <"$DOKKU_SCALE_FILE"
+  done < <(plugn trigger ps-current-scale "$APP")
 
   dokku_log_info2 "Deploy complete"
 
