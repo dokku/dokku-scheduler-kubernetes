@@ -68,10 +68,10 @@ Set the scheduler to `kubernetes`. This can be done per-app or globally:
 
 ```shell
 # globally
-dokku config:set --global DOKKU_SCHEDULER=kubernetes
+dokku scheduler:set --global selected kubernetes
 
 # per-app
-dokku config:set $APP DOKKU_SCHEDULER=kubernetes
+dokku scheduler:set $APP selected kubernetes
 ```
 
 You also need to ensure your kubectl has the correct context specified:
