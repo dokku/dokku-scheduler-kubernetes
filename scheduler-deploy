@@ -70,8 +70,9 @@ scheduler-kubernetes-scheduler-deploy() {
     fn-set-deployment-annotations "$APP" "$TMP_FILE"
     fn-set-pod-annotations "$APP" "$TMP_FILE"
     fn-set-mount "$APP" "$TMP_FILE"
-    fn-set-command-and-args "$APP" "$PROC_TYPE" "$IMAGE_SOURCE_TYPE" "$TMP_FILE"
-
+    if [[ "$IMAGE_SOURCE_TYPE" != "pack" ]]; then
+      fn-set-command-and-args "$APP" "$PROC_TYPE" "$IMAGE_SOURCE_TYPE" "$TMP_FILE"
+    fi
     plugn trigger pre-deploy-kubernetes-apply "$APP" "$PROC_TYPE" "$TMP_FILE" deployment
 
     "${DOKKU_LIB_ROOT}/data/scheduler-kubernetes/kubectl" "${KUBE_ARGS[@]}" apply -f "$TMP_FILE" | sed "s/^/       /"
