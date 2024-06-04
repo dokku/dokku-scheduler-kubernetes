@@ -60,7 +60,7 @@ cmd-scheduler-kubernetes-show-manifest() {
     fn-set-deployment-annotations "$APP" "$TMP_FILE"
     fn-set-pod-annotations "$APP" "$TMP_FILE"
     fn-set-mount "$APP" "$TMP_FILE"
-    if [[ "$IMAGE_SOURCE_TYPE" != "pack" ]]; then
+    if [[ "$IMAGE_SOURCE_TYPE" != "pack" && "$IMAGE_SOURCE_TYPE" != "dockerfile" ]]; then
       fn-set-command-and-args "$APP" "$PROC_TYPE" "$IMAGE_SOURCE_TYPE" "$TMP_FILE"
     fi
 
