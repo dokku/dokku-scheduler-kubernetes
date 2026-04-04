@@ -1,5 +1,8 @@
 # dokku-scheduler-kubernetes
 
+> [!IMPORTANT]
+> deprecated: use scheduler-k3s plugin in dokku core
+
 > If this plugin is missing a feature you need, consider [sponsoring development](https://github.com/dokku/.github/blob/master/SPONSORING.md). Pull requests always welcome!
 
 A Dokku plugin to integrate with kubernetes.
